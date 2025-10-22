@@ -4,16 +4,22 @@ import pt.uc.dei.sd.common.BarrelInterface;
 import pt.uc.dei.sd.common.GatewayInterface;
 import pt.uc.dei.sd.common.SearchResult;
 
+// <--- ADICIONAR ESTES IMPORTS ---
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+// --- FIM DOS IMPORTS ADICIONADOS ---
+
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-// import java.util.Collections; // Não é necessário com List.sort
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set; // Importado
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -25,6 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Comunica com os Barrels.
  */
 public class Gateway extends UnicastRemoteObject implements GatewayInterface {
+
+    private static final String LOG_FILE = "indexed_urls.log"; // <--- ADICIONAR NOME DO FICHEIRO
+    private final Object logLock = new Object(); // <--- ADICIONAR "LOCK"
 
     private final Queue<String> urlQueue; // Fila de URLs para os Downloaders
     private final Set<String> visitedURLs; // Set de URLs já visitados/em-fila
@@ -90,14 +99,27 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     
     @Override
     public void indexNewURL(String url) throws RemoteException {
-        // Lógica alterada para impedir duplicados
-        // O método .add() de um Set (como o newKeySet)
-        // é atómico e retorna 'true' se o elemento foi
-        // adicionado, ou 'false' se já existia.
+        // O método .add() do Set é atómico
         if (visitedURLs.add(url)) {
-            // Só adiciona à fila se for um URL novo
+            // Só executa isto se for um URL novo
             System.out.println("[Gateway] Novo URL recebido para indexar: " + url);
             urlQueue.offer(url); // Adiciona URL à fila
+            
+            // <--- INÍCIO DA LÓGICA DE LOG ---
+            // Sincroniza usando o 'logLock' para garantir que apenas
+            // um thread escreve no ficheiro de cada vez.
+            synchronized (logLock) {
+                // 'true' no FileWriter significa modo "append" (adicionar ao fim)
+                try (FileWriter fw = new FileWriter(LOG_FILE, true);
+                     BufferedWriter bw = new BufferedWriter(fw);
+                     PrintWriter out = new PrintWriter(bw)) 
+                {
+                    out.println(url); // Escreve o URL no ficheiro
+                } catch (IOException e) {
+                    System.err.println("[Gateway] Erro ao escrever no ficheiro de log: " + e.getMessage());
+                }
+            }
+            // <--- FIM DA LÓGICA DE LOG ---
         }
         // Se o URL já existir no 'visitedURLs', é simplesmente ignorado.
     }
@@ -253,7 +275,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
         try {
             Gateway gateway = new Gateway(barrelNames);
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind("GoogolGateway", gateway);
+            registry.rebind("GoogolGateway", gateway); // Corrigido de "Goagol" para "Googol"
 
             System.out.println("[Gateway] pronta e ligada ao RMI Registry como 'GoogolGateway'.");
         } catch (Exception e) {
