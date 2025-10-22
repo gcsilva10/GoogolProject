@@ -59,5 +59,26 @@ O RMI Registry é o "serviço de nomes" onde os servidores se registam.
 
 ```sh
 # Inicia o RMI Registry na porta 1099
-rmiregistry
+rmiregistry -J-cp -J"bin:lib/jsoup-1.21.2.jar"
 ```
+
+```sh
+java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" pt.uc.dei.sd.barrel.Barrel GoogolBarrel1
+```
+
+```sh
+java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" pt.uc.dei.sd.barrel.Barrel GoogolBarrel2
+```
+
+```sh
+java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" pt.uc.dei.sd.gateway.Gateway GoogolBarrel1 GoogolBarrel2
+```
+
+```sh
+java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" pt.uc.dei.sd.downloader.Downloader 2 GoogolGateway GoogolBarrel1 GoogolBarrel2
+```
+
+```sh
+java -Djava.security.policy=security.policy -cp "bin" pt.uc.dei.sd.client.Client GoogolGateway
+```
+
