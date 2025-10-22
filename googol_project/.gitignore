@@ -1,0 +1,33 @@
+# 1. Binários compilados (O teu pedido)
+# Ignora a pasta 'bin' onde os ficheiros .class são guardados
+bin/
+
+# 2. Bibliotecas externas
+# Ignora a pasta 'lib'. É boa prática não enviar ficheiros .jar
+# para o repositório. O README.md deve dizer às pessoas
+# para descarregarem o jsoup.jar e colocá-lo aqui.
+lib/
+
+# 3. Ficheiros de IDE
+# Ignora ficheiros e pastas do IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Ignora ficheiros e pastas do Eclipse
+.project
+.classpath
+.settings/
+
+# Ignora ficheiros e pastas do VS Code
+.vscode/
+
+# 4. Ficheiros do Sistema Operativo
+# Ignora ficheiros do macOS
+.DS_Store
+
+# Ignora ficheiros do Windows
+Thumbs.db
+
+# 5. Ficheiros de Log
+*.log

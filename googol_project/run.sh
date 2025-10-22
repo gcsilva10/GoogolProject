@@ -19,18 +19,31 @@ echo "A usar o JSOUP JAR: $JSOUP_JAR"
 CP="bin:$JSOUP_JAR"
 
 # 3. Define os 6 comandos (SEM aspas extra a proteger $CP e "bin")
-#    vvvvvvv ESTA É A SECÇÃO CORRIGIDA vvvvvvv
 CMD1="rmiregistry -J-cp -J$CP"
 CMD2="java -Djava.security.policy=security.policy -cp $CP pt.uc.dei.sd.barrel.Barrel GoogolBarrel1"
 CMD3="java -Djava.security.policy=security.policy -cp $CP pt.uc.dei.sd.barrel.Barrel GoogolBarrel2"
 CMD4="java -Djava.security.policy=security.policy -cp $CP pt.uc.dei.sd.gateway.Gateway GoogolBarrel1 GoogolBarrel2"
 CMD5="java -Djava.security.policy=security.policy -cp $CP pt.uc.dei.sd.downloader.Downloader 2 GoogolGateway GoogolBarrel1 GoogolBarrel2"
 CMD6="java -Djava.security.policy=security.policy -cp bin pt.uc.dei.sd.client.Client GoogolGateway"
-#    ^^^^^^^ ESTA É A SECÇÃO CORRIGIDA ^^^^^^^
 
 # 4. Navega para o diretório do script (o raiz do projeto)
 #    Isto garante que os comandos correm na pasta correta
 cd "$(dirname "$0")"
+
+# --- NOVA SECÇÃO: Compilação ---
+echo "A limpar o projeto (make clean)..."
+make clean
+
+echo "A compilar o projeto (make)..."
+make
+# Verifica se a compilação falhou
+if [ $? -ne 0 ]; then
+    echo "Erro: A compilação (make) falhou. A anular o arranque."
+    exit 1
+fi
+echo "Compilação concluída."
+# --- FIM DA NOVA SECÇÃO ---
+
 
 # 5. Abre 6 terminais e executa os comandos
 echo "A abrir os 6 terminais..."
