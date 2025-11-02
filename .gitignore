@@ -31,3 +31,9 @@ Thumbs.db
 
 # 5. Ficheiros de Log
 *.log
+
+# 6. Ficheiros de Objetos
+*.ser
+
+# 7. documents
+docs/
