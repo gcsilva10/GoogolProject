@@ -41,62 +41,48 @@ fi
 echo "✅ Compilação concluída"
 echo ""
 
-# Criar diretório para logs
-mkdir -p logs
+# Define o Classpath
+JSOUP_JAR=$(ls lib/jsoup-*.jar 2>/dev/null | head -n 1)
+if [ -z "$JSOUP_JAR" ]; then
+    echo "❌ Erro: Ficheiro jsoup-*.jar não encontrado na pasta /lib"
+    exit 1
+fi
+CP="bin:$JSOUP_JAR"
 
-echo "🚀 A iniciar componentes..."
+# Navega para o diretório do script
+cd "$(dirname "$0")"
+
+echo "🚀 A abrir terminais para cada componente..."
 echo ""
 
-# 1. Iniciar Storage Barrel 1
-echo "1️⃣  Iniciar Storage Barrel 1..."
-java -cp bin:lib/jsoup-1.21.2.jar barrel.Barrel 1 > logs/barrel1_machine2.log 2>&1 &
-BARREL_PID=$!
-sleep 3
-echo "   ✅ Barrel 1 iniciado (PID: $BARREL_PID)"
-echo "   📄 Log: logs/barrel1_machine2.log"
-echo ""
-
-# 2. Iniciar Downloader
-echo "2️⃣  Iniciar Downloader..."
-java -cp bin:lib/jsoup-1.21.2.jar downloader.Downloader > logs/downloader_machine2.log 2>&1 &
-DOWNLOADER_PID=$!
+# 1. Terminal: Barrel 1
+echo "1️⃣  Abrir Terminal: Storage Barrel 1"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Barrel 1 ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP barrel.Barrel 1\""
 sleep 2
-echo "   ✅ Downloader iniciado (PID: $DOWNLOADER_PID)"
-echo "   📄 Log: logs/downloader_machine2.log"
-echo ""
 
-echo "=================================================="
-echo "✅ Serviços de background iniciados!"
-echo "=================================================="
-echo ""
-echo "PIDs dos processos:"
-echo "  - Barrel 1:      $BARREL_PID"
-echo "  - Downloader:    $DOWNLOADER_PID"
-echo ""
-echo "Para verificar os logs em outra janela:"
-echo "  tail -f logs/barrel1_machine2.log"
-echo "  tail -f logs/downloader_machine2.log"
+# 2. Terminal: Downloader
+echo "2️⃣  Abrir Terminal: Downloader"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Downloader ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP downloader.Downloader\""
+sleep 2
+
+# 3. Terminal: Cliente (interativo)
+echo "3️⃣  Abrir Terminal: Cliente RMI"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Cliente ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp bin client.Client\""
+
 echo ""
 echo "=================================================="
+echo "✅ Todos os terminais da Máquina #2 foram abertos!"
+echo "=================================================="
 echo ""
-
-# Salvar PIDs num ficheiro para facilitar limpeza
-echo "$BARREL_PID $DOWNLOADER_PID" > .pids_machine2
-
-# 3. Iniciar Cliente (interativo)
-echo "3️⃣  A iniciar Cliente interativo..."
+echo "Componentes iniciados:"
+echo "  ✅ Storage Barrel 1"
+echo "  ✅ Downloader"
+echo "  ✅ Cliente RMI (interativo)"
 echo ""
-sleep 1
-
-# Trap para limpar processos ao sair
-trap "echo ''; echo 'A parar serviços...'; kill $BARREL_PID $DOWNLOADER_PID 2>/dev/null; rm -f .pids_machine2; echo 'Serviços parados.'; exit 0" INT TERM
-
-# Iniciar cliente (foreground, interativo)
-java -cp bin:lib/jsoup-1.21.2.jar client.Client
-
-# Quando o cliente terminar, limpar os outros processos
+echo "O Cliente está em modo interativo no último terminal."
 echo ""
-echo "Cliente encerrado. A parar serviços de background..."
-kill $BARREL_PID $DOWNLOADER_PID 2>/dev/null
-rm -f .pids_machine2
-echo "Todos os serviços da Máquina #2 foram parados."
+echo "Para parar todos os serviços, feche os terminais ou use:"
+echo "  pkill -f 'barrel.Barrel'"
+echo "  pkill -f 'downloader.Downloader'"
+echo "  pkill -f 'client.Client'"
+echo ""

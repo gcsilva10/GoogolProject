@@ -41,73 +41,53 @@ fi
 echo "✅ Compilação concluída"
 echo ""
 
-# Criar diretório para logs
-mkdir -p logs
+# Define o Classpath
+JSOUP_JAR=$(ls lib/jsoup-*.jar 2>/dev/null | head -n 1)
+if [ -z "$JSOUP_JAR" ]; then
+    echo "❌ Erro: Ficheiro jsoup-*.jar não encontrado na pasta /lib"
+    exit 1
+fi
+CP="bin:$JSOUP_JAR"
 
-echo "🚀 A iniciar componentes..."
+# Navega para o diretório do script
+cd "$(dirname "$0")"
+
+echo "🚀 A abrir terminais para cada componente..."
 echo ""
 
-# 1. Iniciar RMI Registry
-echo "1️⃣  Iniciar RMI Registry..."
-rmiregistry &
-RMI_PID=$!
+# 1. Terminal: RMI Registry
+echo "1️⃣  Abrir Terminal: RMI Registry"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: RMI Registry ====='; cd '$(pwd)'; rmiregistry -J-Djava.rmi.server.codebase=file:bin/ -J-cp -J'$CP'\""
 sleep 2
-echo "   ✅ RMI Registry iniciado (PID: $RMI_PID)"
-echo ""
 
-# 2. Iniciar Gateway
-echo "2️⃣  Iniciar Gateway..."
-java -cp bin:lib/jsoup-1.21.2.jar gateway.Gateway > logs/gateway_machine1.log 2>&1 &
-GATEWAY_PID=$!
-sleep 3
-echo "   ✅ Gateway iniciada (PID: $GATEWAY_PID)"
-echo "   📄 Log: logs/gateway_machine1.log"
-echo ""
-
-# 3. Iniciar Storage Barrel 0
-echo "3️⃣  Iniciar Storage Barrel 0..."
-java -cp bin:lib/jsoup-1.21.2.jar barrel.Barrel 0 > logs/barrel0_machine1.log 2>&1 &
-BARREL_PID=$!
+# 2. Terminal: Gateway
+echo "2️⃣  Abrir Terminal: Gateway"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: Gateway ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP gateway.Gateway\""
 sleep 2
-echo "   ✅ Barrel 0 iniciado (PID: $BARREL_PID)"
-echo "   📄 Log: logs/barrel0_machine1.log"
-echo ""
 
-# 4. Iniciar Downloader
-echo "4️⃣  Iniciar Downloader..."
-java -cp bin:lib/jsoup-1.21.2.jar downloader.Downloader > logs/downloader_machine1.log 2>&1 &
-DOWNLOADER_PID=$!
+# 3. Terminal: Barrel 0
+echo "3️⃣  Abrir Terminal: Storage Barrel 0"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: Barrel 0 ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP barrel.Barrel 0\""
 sleep 2
-echo "   ✅ Downloader iniciado (PID: $DOWNLOADER_PID)"
-echo "   📄 Log: logs/downloader_machine1.log"
-echo ""
 
+# 4. Terminal: Downloader
+echo "4️⃣  Abrir Terminal: Downloader"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: Downloader ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP downloader.Downloader\""
+
+echo ""
 echo "=================================================="
-echo "✅ Todos os componentes da Máquina #1 iniciados!"
+echo "✅ Todos os terminais da Máquina #1 foram abertos!"
 echo "=================================================="
 echo ""
-echo "PIDs dos processos:"
-echo "  - RMI Registry:  $RMI_PID"
-echo "  - Gateway:       $GATEWAY_PID"
-echo "  - Barrel 0:      $BARREL_PID"
-echo "  - Downloader:    $DOWNLOADER_PID"
+echo "Componentes iniciados:"
+echo "  ✅ RMI Registry"
+echo "  ✅ Gateway"
+echo "  ✅ Storage Barrel 0"
+echo "  ✅ Downloader"
 echo ""
-echo "Para verificar os logs:"
-echo "  tail -f logs/gateway_machine1.log"
-echo "  tail -f logs/barrel0_machine1.log"
-echo "  tail -f logs/downloader_machine1.log"
+echo "Para parar todos os serviços, feche os terminais ou use:"
+echo "  pkill -f 'rmiregistry'"
+echo "  pkill -f 'gateway.Gateway'"
+echo "  pkill -f 'barrel.Barrel'"
+echo "  pkill -f 'downloader.Downloader'"
 echo ""
-echo "Para parar todos os processos:"
-echo "  kill $RMI_PID $GATEWAY_PID $BARREL_PID $DOWNLOADER_PID"
-echo ""
-echo "Pressione Ctrl+C para parar todos os serviços..."
-echo ""
-
-# Salvar PIDs num ficheiro para facilitar limpeza
-echo "$RMI_PID $GATEWAY_PID $BARREL_PID $DOWNLOADER_PID" > .pids_machine1
-
-# Aguardar e limpar ao sair
-trap "echo ''; echo 'A parar serviços...'; kill $RMI_PID $GATEWAY_PID $BARREL_PID $DOWNLOADER_PID 2>/dev/null; rm -f .pids_machine1; echo 'Serviços parados.'; exit 0" INT TERM
-
-# Manter o script a correr
-wait
