@@ -109,11 +109,12 @@ public class Config {
     
     /**
      * Obtém o hostname/IP do RMI Registry.
+     * O RMI Registry está sempre na Máquina #1 (onde está a Gateway).
      * 
-     * @return O hostname configurado (padrão: "localhost")
+     * @return O hostname configurado (IP da Máquina #1)
      */
     public static String getRmiHost() {
-        return get("rmi.host", "localhost");
+        return getMachine1IP();
     }
     
     /**
@@ -123,6 +124,67 @@ public class Config {
      */
     public static int getRmiPort() {
         return getInt("rmi.port", 1099);
+    }
+    
+    /**
+     * Obtém o IP da Máquina #1.
+     * Máquina #1 corre: Gateway + Barrel0 + Downloader + RMI Registry
+     * 
+     * @return O IP da Máquina #1 (padrão: "localhost")
+     */
+    public static String getMachine1IP() {
+        return get("machine1.ip", "localhost");
+    }
+    
+    /**
+     * Obtém o IP da Máquina #2.
+     * Máquina #2 corre: Barrel1 + Downloader + Cliente
+     * 
+     * @return O IP da Máquina #2 (padrão: "localhost")
+     */
+    public static String getMachine2IP() {
+        return get("machine2.ip", "localhost");
+    }
+    
+    /**
+     * Obtém o hostname/IP da máquina onde a Gateway corre.
+     * A Gateway está sempre na Máquina #1.
+     * 
+     * @return O hostname da Gateway (IP da Máquina #1)
+     */
+    public static String getGatewayHost() {
+        return getMachine1IP();
+    }
+    
+    /**
+     * Obtém o hostname/IP da máquina onde os Barrels correm.
+     * IMPORTANTE: Este método determina automaticamente qual IP usar
+     * baseado no índice do Barrel:
+     * - Barrel 0 (primário): usa IP da Máquina #1
+     * - Barrel 1+: usa IP da Máquina #2
+     * 
+     * Para uso nos Barrels, chame getBarrelHost(barrelIndex)
+     * 
+     * @return O hostname padrão (IP da Máquina #1)
+     */
+    public static String getBarrelHost() {
+        return getMachine1IP();
+    }
+    
+    /**
+     * Obtém o hostname/IP correto para um Barrel específico.
+     * - Barrel 0: Máquina #1
+     * - Barrel 1+: Máquina #2
+     * 
+     * @param barrelIndex O índice do Barrel (0, 1, 2, ...)
+     * @return O IP correto para este Barrel
+     */
+    public static String getBarrelHost(int barrelIndex) {
+        if (barrelIndex == 0) {
+            return getMachine1IP();
+        } else {
+            return getMachine2IP();
+        }
     }
     
     /**

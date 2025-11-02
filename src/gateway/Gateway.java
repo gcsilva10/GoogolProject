@@ -544,16 +544,19 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
      */
     public static void main(String[] args) {
         System.setProperty("java.security.policy", "security.policy");
-        System.setProperty("java.rmi.server.hostname", "localhost");
+        
+        // Lê configurações do ficheiro config.properties
+        String gatewayHost = Config.getGatewayHost();
+        System.setProperty("java.rmi.server.hostname", gatewayHost);
 
         try {
-            // Lê configurações do ficheiro config.properties
             String gatewayName = Config.getGatewayName();
             List<String> barrelNames = Config.getBarrelsList();
             String rmiHost = Config.getRmiHost();
             int rmiPort = Config.getRmiPort();
             
             System.out.println("[Gateway] A iniciar com nome: " + gatewayName);
+            System.out.println("[Gateway] Hostname RMI configurado: " + gatewayHost);
             System.out.println("[Gateway] Barrels configurados: " + barrelNames);
             System.out.println("[Gateway] RMI Registry: " + rmiHost + ":" + rmiPort);
             

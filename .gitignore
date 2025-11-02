@@ -6,7 +6,7 @@ bin/
 # Ignora a pasta 'lib'. É boa prática não enviar ficheiros .jar
 # para o repositório. O README.md deve dizer às pessoas
 # para descarregarem o jsoup.jar e colocá-lo aqui.
-lib/
+#lib/
 
 # 3. Ficheiros de IDE
 # Ignora ficheiros e pastas do IntelliJ IDEA

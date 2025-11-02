@@ -37,18 +37,17 @@ public class Client {
      */
     public static void main(String[] args) {
         System.setProperty("java.security.policy", "security.policy");
-        System.setProperty("java.rmi.server.hostname", "localhost");
 
         try {
             // Lê configurações do ficheiro config.properties
             String gatewayName = Config.getGatewayName();
-            String rmiHost = Config.getRmiHost();
+            String gatewayHost = Config.getGatewayHost();
             int rmiPort = Config.getRmiPort();
             
             System.out.println("[Client] A ligar ao Gateway: " + gatewayName);
-            System.out.println("[Client] RMI Registry: " + rmiHost + ":" + rmiPort);
+            System.out.println("[Client] Gateway Host: " + gatewayHost + ":" + rmiPort);
             
-            Registry registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
+            Registry registry = LocateRegistry.getRegistry(gatewayHost, rmiPort);
             GatewayInterface gateway = (GatewayInterface) registry.lookup(gatewayName);
 
             System.out.println("Ligado à Googol Gateway. Bem-vindo!");

@@ -649,8 +649,11 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
             System.out.println("[Barrel] A iniciar como: " + rmiName);
             System.out.println("[Barrel] Outros barrels: " + otherBarrelNames);
             
-            // Define o hostname RMI para garantir comunicação local
-            System.setProperty("java.rmi.server.hostname", Config.getRmiHost());
+            // Define o hostname RMI baseado no índice do Barrel
+            // Barrel 0 -> Máquina #1, Barrel 1+ -> Máquina #2
+            String barrelHost = Config.getBarrelHost(barrelIndex);
+            System.setProperty("java.rmi.server.hostname", barrelHost);
+            System.out.println("[Barrel] Hostname RMI configurado: " + barrelHost);
             
             Barrel barrel = new Barrel(rmiName, otherBarrelNames);
             

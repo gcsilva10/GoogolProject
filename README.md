@@ -2,6 +2,39 @@
 
 Este é o projeto Googol - um motor de busca distribuído implementado com Java RMI.
 
+---
+
+## 🌐 **NOVIDADE: Execução Distribuída em Múltiplas Máquinas**
+
+O sistema agora suporta execução distribuída em diferentes máquinas na mesma rede local!
+
+### Configurações Disponíveis:
+
+1. **📍 Local (uma máquina)**: Use `run.sh` - tudo corre localmente
+2. **🌍 Distribuído (duas máquinas)**: Use `run_machine1.sh` e `run_machine2.sh`
+
+### Para Executar em Duas Máquinas:
+
+**Ver guia completo:** [DISTRIBUTED_SETUP.md](DISTRIBUTED_SETUP.md)
+
+**Resumo rápido:**
+```bash
+# Máquina #1 (Gateway + Barrel0 + Downloader)
+./run_machine1.sh
+
+# Máquina #2 (Barrel1 + Downloader + Cliente)
+./run_machine2.sh
+```
+
+**Configuração:**
+- Edite `config.properties` em cada máquina
+- Configure os IPs: `gateway.host`, `barrel.host`, `rmi.host`
+- Use os exemplos: `config_machine1_example.properties` e `config_machine2_example.properties`
+
+📖 **Documentação detalhada com resolução de problemas:** [DISTRIBUTED_SETUP.md](DISTRIBUTED_SETUP.md)
+
+---
+
 ## Estrutura do Projeto
 
 ```
