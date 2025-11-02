@@ -191,4 +191,16 @@ public class Config {
     public static long getStatisticsMonitorInterval() {
         return getLong("statistics.monitor.interval", 3000);
     }
+    
+    /**
+     * Obtém o intervalo de auto-save do Barrel primário em milissegundos.
+     * Também usado pela Gateway para backup periódico da URL queue.
+     * Lê o valor em SEGUNDOS do ficheiro e converte para milissegundos.
+     * 
+     * @return Intervalo em milissegundos (padrão: 60000ms = 60 segundos)
+     */
+    public static long getBarrelAutoSaveInterval() {
+        int seconds = getInt("barrel.autosave.interval", 60);
+        return seconds * 1000L;
+    }
 }

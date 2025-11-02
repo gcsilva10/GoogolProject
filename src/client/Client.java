@@ -73,6 +73,9 @@ public class Client {
      *   <li>Sair - Desliga o cliente</li>
      * </ol>
      * 
+     * <p><b>Tolerância a falhas:</b> Se a Gateway ficar inacessível (cai ou desliga),
+     * o cliente detecta automaticamente e encerra-se de forma limpa.</p>
+     * 
      * @param gateway Referência RMI para a Gateway
      */
     private static void runMenu(GatewayInterface gateway) {
@@ -134,8 +137,11 @@ public class Client {
                         break;
                 }
             } catch (RemoteException e) {
-                System.err.println("\nErro ao comunicar com a Gateway: " + e.getMessage());
-                System.err.println("Tente novamente. Se o erro persistir, a Gateway pode estar offline.");
+                System.err.println("\n✗ ERRO: Gateway não está acessível!");
+                System.err.println("Detalhes: " + e.getMessage());
+                System.err.println("\nA Gateway caiu ou está offline. O cliente vai encerrar.");
+                running = false;
+                break;
             } catch (Exception e) {
                 System.err.println("\nOcorreu um erro inesperado: " + e.getMessage());
             }
@@ -178,6 +184,9 @@ public class Client {
      * Apresenta estatísticas do sistema em tempo real usando callbacks push.
      * Regista callback na Gateway para receber notificações automáticas.
      * 
+     * <p><b>Tolerância a falhas:</b> Se a Gateway ficar inacessível durante
+     * a visualização de estatísticas, o cliente encerra-se automaticamente.</p>
+     * 
      * @param gateway Referência RMI para a Gateway
      * @param scanner Scanner para aguardar input do utilizador
      */
@@ -202,7 +211,10 @@ public class Client {
             System.out.println("\nDesregistado. Voltando ao menu principal...\n");
             
         } catch (RemoteException e) {
-            System.err.println("\nErro ao comunicar com a Gateway: " + e.getMessage());
+            System.err.println("\n✗ ERRO: Gateway não está acessível!");
+            System.err.println("Detalhes: " + e.getMessage());
+            System.err.println("\nA Gateway caiu. O cliente vai encerrar.");
+            System.exit(1);
         } finally {
             if (callback != null) {
                 try {

@@ -16,6 +16,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -61,6 +62,14 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Cria uma nova instância da Gateway e inicializa todos os componentes.
      * 
+     * <p>Sequência de inicialização:</p>
+     * <ol>
+     *   <li>Inicializa estruturas de dados (queues, maps, sets)</li>
+     *   <li>Tenta recuperar URL queue dos Barrels (tolerância a falhas)</li>
+     *   <li>Conecta aos Barrels via RMI</li>
+     *   <li>Inicia thread de monitorização de estatísticas</li>
+     * </ol>
+     * 
      * @param barrelNames Lista de nomes RMI dos Barrels disponíveis
      * @throws RemoteException Se houver falha ao exportar o objeto RMI
      */
@@ -78,6 +87,9 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
         this.visitedURLs = ConcurrentHashMap.newKeySet();
         
         this.statisticsCallbacks = new CopyOnWriteArrayList<>();
+        
+        // Tenta recuperar URL queue dos Barrels
+        recoverURLQueueFromBarrels();
         
         connectToBarrels();
         
@@ -127,6 +139,9 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
      * 
      * <p>Implementa deduplicação de URLs (ignora duplicados) e persiste
      * todos os URLs indexados em ficheiro de log.</p>
+     * 
+     * <p><b>Backup automático:</b> Envia backup da URL queue para os Barrels
+     * imediatamente após adicionar o URL (event-driven).</p>
      */
     @Override
     public void indexNewURL(String url) throws RemoteException {
@@ -144,6 +159,9 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                     System.err.println("[Gateway] Erro ao escrever no ficheiro de log: " + e.getMessage());
                 }
             }
+            
+            // Envia backup imediato da URL queue para os Barrels
+            backupURLQueueToBarrels();
             
             notifyStatisticsChange();
         }
@@ -256,10 +274,20 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
      * {@inheritDoc}
      * 
      * <p>Implementa o padrão produtor-consumidor: remove e retorna um URL da fila.</p>
+     * 
+     * <p><b>Backup automático:</b> Se um URL foi removido, envia backup atualizado
+     * da queue para os Barrels (event-driven).</p>
      */
     @Override
     public String getURLToCrawl() throws RemoteException {
-        return urlQueue.poll();
+        String url = urlQueue.poll();
+        
+        // Se removeu um URL, envia backup atualizado
+        if (url != null) {
+            backupURLQueueToBarrels();
+        }
+        
+        return url;
     }
     
     /**
@@ -408,12 +436,111 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
         monitorThread.setName("StatisticsMonitor");
         monitorThread.start();
     }
+    
+    /**
+     * Recupera o backup da URL queue guardado nos Barrels após reinício da Gateway.
+     * Implementa tolerância a falhas permitindo que a Gateway recupere o seu estado.
+     * 
+     * <p>Estratégia de recuperação:</p>
+     * <ol>
+     *   <li>Contacta todos os Barrels configurados via RMI</li>
+     *   <li>Obtém backup de cada Barrel disponível</li>
+     *   <li>Escolhe o backup com mais URLs (estado mais completo)</li>
+     *   <li>Restaura urlQueue e visitedURLs</li>
+     * </ol>
+     * 
+     * <p>Se nenhum Barrel tiver backup, inicia com queues vazias.</p>
+     * 
+     * <p>Chamado automaticamente no construtor da Gateway.</p>
+     */
+    private void recoverURLQueueFromBarrels() {
+        System.out.println("[Gateway] Tentando recuperar URL queue dos Barrels...");
+        
+        try {
+            String rmiHost = Config.getRmiHost();
+            int rmiPort = Config.getRmiPort();
+            Registry registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
+            
+            Queue<String> bestQueue = null;
+            Set<String> bestVisited = null;
+            int maxSize = 0;
+            
+            for (String barrelName : barrelNames) {
+                try {
+                    BarrelInterface barrel = (BarrelInterface) registry.lookup(barrelName);
+                    Object[] backup = barrel.restoreURLQueue();
+                    
+                    if (backup != null && backup.length == 2) {
+                        @SuppressWarnings("unchecked")
+                        Queue<String> queue = (Queue<String>) backup[0];
+                        @SuppressWarnings("unchecked")
+                        Set<String> visited = (Set<String>) backup[1];
+                        
+                        int totalSize = queue.size() + visited.size();
+                        if (totalSize > maxSize) {
+                            maxSize = totalSize;
+                            bestQueue = queue;
+                            bestVisited = visited;
+                        }
+                        
+                        System.out.println("[Gateway] Barrel " + barrelName + " tem backup: " + 
+                                         queue.size() + " URLs pendentes, " + visited.size() + " visitados");
+                    }
+                } catch (Exception e) {
+                    System.err.println("[Gateway] Não foi possível recuperar de " + barrelName + ": " + e.getMessage());
+                }
+            }
+            
+            if (bestQueue != null && bestVisited != null) {
+                urlQueue.addAll(bestQueue);
+                visitedURLs.addAll(bestVisited);
+                System.out.println("[Gateway] ✓ URL queue recuperada com sucesso! " + 
+                                 urlQueue.size() + " URLs pendentes, " + visitedURLs.size() + " URLs visitados");
+            } else {
+                System.out.println("[Gateway] Nenhum backup encontrado. A iniciar com queue vazia.");
+            }
+            
+        } catch (Exception e) {
+            System.err.println("[Gateway] Erro ao recuperar URL queue: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Envia backup da URL queue para todos os Barrels disponíveis.
+     * Implementa backup event-driven: chamado sempre que a queue é modificada.
+     * 
+     * <p>Pontos de invocação:</p>
+     * <ul>
+     *   <li>{@link #indexNewURL(String)} - Quando novo URL é adicionado</li>
+     *   <li>{@link #getURLToCrawl()} - Quando URL é removido (consumido)</li>
+     * </ul>
+     * 
+     * <p><b>Execução assíncrona:</b> Cria thread separada para não bloquear
+     * a operação principal. Barrels offline são ignorados silenciosamente.</p>
+     * 
+     * <p>Garante que todos os Barrels têm sempre o estado mais recente
+     * da URL queue para permitir recuperação da Gateway.</p>
+     */
+    private void backupURLQueueToBarrels() {
+        // Executa em thread separada para não bloquear
+        new Thread(() -> {
+            for (BarrelInterface barrel : barrels) {
+                try {
+                    barrel.backupURLQueue(new ConcurrentLinkedQueue<>(urlQueue), 
+                                        new HashSet<>(visitedURLs));
+                } catch (RemoteException e) {
+                    // Barrel pode estar offline, ignora silenciosamente
+                }
+            }
+        }).start();
+    }
 
     /**
      * Método principal para iniciar a Gateway.
      * Configura RMI, conecta ao Registry e exporta a Gateway como serviço RMI.
      * 
      * @param args Argumentos de linha de comando (não utilizados)
+```
      */
     public static void main(String[] args) {
         System.setProperty("java.security.policy", "security.policy");

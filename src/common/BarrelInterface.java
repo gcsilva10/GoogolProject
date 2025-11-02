@@ -86,4 +86,22 @@ public interface BarrelInterface extends Remote {
      * @throws RemoteException Se houver falha na comunicação RMI
      */
     java.util.Map<String, SearchResult> getPageInfoMap() throws RemoteException;
+    
+    /**
+     * Recebe e guarda a URL queue da Gateway para backup.
+     * Permite recuperação em caso de falha da Gateway.
+     * 
+     * @param urlQueue Queue de URLs pendentes para crawling
+     * @param visitedURLs Set de URLs já visitados/processados
+     * @throws RemoteException Se houver falha na comunicação RMI
+     */
+    void backupURLQueue(java.util.Queue<String> urlQueue, Set<String> visitedURLs) throws RemoteException;
+    
+    /**
+     * Recupera a URL queue guardada para restaurar o estado da Gateway.
+     * 
+     * @return Array com 2 elementos: [0]=Queue de URLs pendentes, [1]=Set de URLs visitados
+     * @throws RemoteException Se houver falha na comunicação RMI
+     */
+    Object[] restoreURLQueue() throws RemoteException;
 }
