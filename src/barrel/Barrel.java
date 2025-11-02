@@ -4,9 +4,9 @@ import common.BarrelInterface;
 import common.SearchResult;
 import common.Config;
 import common.BloomFilter;
+import common.RegistrationService;
 
 import java.rmi.RemoteException;
-import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -675,13 +675,33 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
                 throw e;
             }
             
-            // Usa Naming.rebind() que aceita URLs RMI remotas
-            // Formato: rmi://host:port/name
-            String rmiUrl = "rmi://" + rmiHost + ":" + rmiPort + "/" + rmiName;
-            System.out.println("[Barrel] A registar no RMI Registry: " + rmiUrl);
-            Naming.rebind(rmiUrl, barrel);
+            // Verifica se este Barrel está na mesma máquina que o RMI Registry
+            boolean isLocalToRegistry = barrelHost.equals(rmiHost) || 
+                                       barrelHost.equals("localhost") || 
+                                       barrelHost.equals("127.0.0.1") ||
+                                       rmiHost.equals("localhost") ||
+                                       rmiHost.equals("127.0.0.1");
             
-            System.out.println("[Barrel " + rmiName + "] pronto e ligado ao RMI Registry.");
+            if (isLocalToRegistry) {
+                // Barrel local: pode fazer rebind diretamente
+                System.out.println("[Barrel] A registar localmente no RMI Registry...");
+                registry.rebind(rmiName, barrel);
+                System.out.println("[Barrel " + rmiName + "] registado e pronto.");
+            } else {
+                // Barrel remoto: usa o RegistrationService para fazer rebind
+                System.out.println("[Barrel] A registar remotamente via RegistrationService...");
+                try {
+                    RegistrationService regService = (RegistrationService) registry.lookup("RegistrationService");
+                    regService.registerRemoteObject(rmiName, barrel);
+                    System.out.println("[Barrel " + rmiName + "] registado remotamente e pronto.");
+                } catch (Exception e) {
+                    System.err.println("[Barrel] ERRO: RegistrationService não encontrado!");
+                    System.err.println("[Barrel] Certifique-se que o RegistrationService está a correr na Máquina #1.");
+                    System.err.println("[Barrel] Detalhes: " + e.getMessage());
+                    throw e;
+                }
+            }
+            
         } catch (NumberFormatException e) {
             System.err.println("[Barrel] Índice inválido. Deve ser um número.");
             e.printStackTrace();

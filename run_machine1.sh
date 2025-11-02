@@ -55,10 +55,10 @@ cd "$(dirname "$0")"
 echo "🚀 A abrir terminais para cada componente..."
 echo ""
 
-# 1. Terminal: RMI Registry
-echo "1️⃣  Abrir Terminal: RMI Registry"
-osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: RMI Registry ====='; cd '$(pwd)'; rmiregistry -J-Djava.rmi.server.codebase=file:bin/ -J-cp -J'$CP'\""
-sleep 2
+# 1. Terminal: Registration Service (cria RMI Registry e aceita registos remotos)
+echo "1️⃣  Abrir Terminal: Registration Service + RMI Registry"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: Registration Service ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP common.RegistrationServiceImpl\""
+sleep 3
 
 # 2. Terminal: Gateway
 echo "2️⃣  Abrir Terminal: Gateway"
@@ -80,13 +80,16 @@ echo "✅ Todos os terminais da Máquina #1 foram abertos!"
 echo "=================================================="
 echo ""
 echo "Componentes iniciados:"
-echo "  ✅ RMI Registry"
+echo "  ✅ Registration Service + RMI Registry"
 echo "  ✅ Gateway"
 echo "  ✅ Storage Barrel 0"
 echo "  ✅ Downloader"
 echo ""
+echo "⚠️  IMPORTANTE: O Registration Service permite que"
+echo "    componentes remotos (Máquina #2) se registem no RMI Registry."
+echo ""
 echo "Para parar todos os serviços, feche os terminais ou use:"
-echo "  pkill -f 'rmiregistry'"
+echo "  pkill -f 'RegistrationServiceImpl'"
 echo "  pkill -f 'gateway.Gateway'"
 echo "  pkill -f 'barrel.Barrel'"
 echo "  pkill -f 'downloader.Downloader'"
