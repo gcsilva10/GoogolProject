@@ -6,6 +6,7 @@ import common.Config;
 import common.BloomFilter;
 
 import java.rmi.RemoteException;
+import java.rmi.Naming;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -662,6 +663,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
             int rmiPort = Config.getRmiPort();
             System.out.println("[Barrel] A conectar ao RMI Registry em " + rmiHost + ":" + rmiPort);
             
+            // Verifica se o registry está acessível
             Registry registry;
             try {
                 registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
@@ -673,7 +675,12 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
                 throw e;
             }
             
-            registry.rebind(rmiName, barrel);
+            // Usa Naming.rebind() que aceita URLs RMI remotas
+            // Formato: rmi://host:port/name
+            String rmiUrl = "rmi://" + rmiHost + ":" + rmiPort + "/" + rmiName;
+            System.out.println("[Barrel] A registar no RMI Registry: " + rmiUrl);
+            Naming.rebind(rmiUrl, barrel);
+            
             System.out.println("[Barrel " + rmiName + "] pronto e ligado ao RMI Registry.");
         } catch (NumberFormatException e) {
             System.err.println("[Barrel] Índice inválido. Deve ser um número.");
