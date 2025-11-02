@@ -98,7 +98,15 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
 
     /**
      * Conecta (ou reconecta) a todos os Barrels configurados via RMI Registry.
-     * Barrels que não estão acessíveis são ignorados mas podem ser reconectados depois.
+     * Implementa retry com espera para ambientes distribuídos onde Barrels
+     * podem demorar a iniciar ou estar em máquinas diferentes.
+     * 
+     * <p>Estratégia de retry:</p>
+     * <ul>
+     *   <li>Tenta conectar a cada Barrel até 10 vezes</li>
+     *   <li>Espera 2 segundos entre cada tentativa</li>
+     *   <li>Barrels que não estão acessíveis são ignorados</li>
+     * </ul>
      */
     private void connectToBarrels() {
         barrels.clear();
@@ -109,15 +117,44 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             int rmiPort = Config.getRmiPort();
             registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
             
+            int maxRetries = 10;
+            int retryDelay = 2000; // 2 segundos
+            
             for (String name : barrelNames) {
-                try {
-                    BarrelInterface barrel = (BarrelInterface) registry.lookup(name);
-                    barrels.add(barrel);
-                    System.out.println("[Gateway] Ligado com sucesso a " + name);
-                } catch (Exception e) {
-                    System.err.println("[Gateway] Falha ao ligar a " + name + ": " + e.getMessage());
+                boolean connected = false;
+                
+                for (int attempt = 1; attempt <= maxRetries && !connected; attempt++) {
+                    try {
+                        BarrelInterface barrel = (BarrelInterface) registry.lookup(name);
+                        barrels.add(barrel);
+                        System.out.println("[Gateway] ✓ Ligado com sucesso a " + name);
+                        connected = true;
+                    } catch (Exception e) {
+                        if (attempt < maxRetries) {
+                            System.out.println("[Gateway] ⏳ Tentativa " + attempt + "/" + maxRetries + 
+                                             " para conectar a " + name + " falhou. A aguardar " + 
+                                             (retryDelay/1000) + "s...");
+                            try {
+                                Thread.sleep(retryDelay);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        } else {
+                            System.err.println("[Gateway] ✗ Falha ao ligar a " + name + 
+                                             " após " + maxRetries + " tentativas: " + e.getMessage());
+                        }
+                    }
                 }
             }
+            
+            if (barrels.isEmpty()) {
+                System.err.println("[Gateway] ⚠️  AVISO: Nenhum Barrel conectado!");
+            } else {
+                System.out.println("[Gateway] 📊 Conectado a " + barrels.size() + " de " + 
+                                 barrelNames.size() + " Barrel(s) configurados");
+            }
+            
         } catch (RemoteException e1) {
              System.err.println("[Gateway] Falha ao obter RMI registry: " + e1.getMessage());
         }
@@ -447,7 +484,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
      * 
      * <p>Estratégia de recuperação:</p>
      * <ol>
-     *   <li>Contacta todos os Barrels configurados via RMI</li>
+     *   <li>Tenta conectar aos Barrels com retry (até 5 tentativas)</li>
      *   <li>Obtém backup de cada Barrel disponível</li>
      *   <li>Escolhe o backup com mais URLs (estado mais completo)</li>
      *   <li>Restaura urlQueue e visitedURLs</li>
@@ -469,29 +506,49 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             Set<String> bestVisited = null;
             int maxSize = 0;
             
+            int maxRetries = 5;
+            int retryDelay = 2000; // 2 segundos
+            
             for (String barrelName : barrelNames) {
-                try {
-                    BarrelInterface barrel = (BarrelInterface) registry.lookup(barrelName);
-                    Object[] backup = barrel.restoreURLQueue();
-                    
-                    if (backup != null && backup.length == 2) {
-                        @SuppressWarnings("unchecked")
-                        Queue<String> queue = (Queue<String>) backup[0];
-                        @SuppressWarnings("unchecked")
-                        Set<String> visited = (Set<String>) backup[1];
+                boolean recovered = false;
+                
+                for (int attempt = 1; attempt <= maxRetries && !recovered; attempt++) {
+                    try {
+                        BarrelInterface barrel = (BarrelInterface) registry.lookup(barrelName);
+                        Object[] backup = barrel.restoreURLQueue();
                         
-                        int totalSize = queue.size() + visited.size();
-                        if (totalSize > maxSize) {
-                            maxSize = totalSize;
-                            bestQueue = queue;
-                            bestVisited = visited;
+                        if (backup != null && backup.length == 2) {
+                            @SuppressWarnings("unchecked")
+                            Queue<String> queue = (Queue<String>) backup[0];
+                            @SuppressWarnings("unchecked")
+                            Set<String> visited = (Set<String>) backup[1];
+                            
+                            int totalSize = queue.size() + visited.size();
+                            if (totalSize > maxSize) {
+                                maxSize = totalSize;
+                                bestQueue = queue;
+                                bestVisited = visited;
+                            }
+                            
+                            System.out.println("[Gateway] ✓ Barrel " + barrelName + " tem backup: " + 
+                                             queue.size() + " URLs pendentes, " + visited.size() + " visitados");
+                            recovered = true;
                         }
-                        
-                        System.out.println("[Gateway] Barrel " + barrelName + " tem backup: " + 
-                                         queue.size() + " URLs pendentes, " + visited.size() + " visitados");
+                    } catch (Exception e) {
+                        if (attempt < maxRetries) {
+                            System.out.println("[Gateway] ⏳ Tentativa " + attempt + "/" + maxRetries + 
+                                             " para recuperar de " + barrelName + " falhou. A aguardar...");
+                            try {
+                                Thread.sleep(retryDelay);
+                            } catch (InterruptedException ie) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
+                        } else {
+                            System.err.println("[Gateway] ✗ Não foi possível recuperar de " + barrelName + 
+                                             " após " + maxRetries + " tentativas");
+                        }
                     }
-                } catch (Exception e) {
-                    System.err.println("[Gateway] Não foi possível recuperar de " + barrelName + ": " + e.getMessage());
                 }
             }
             
@@ -528,14 +585,40 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     private void backupURLQueueToBarrels() {
         // Executa em thread separada para não bloquear
         new Thread(() -> {
-            for (BarrelInterface barrel : barrels) {
+            // Se não há Barrels conectados, tenta reconectar
+            if (barrels.isEmpty()) {
+                System.out.println("[Gateway] ⚠️  Lista de Barrels vazia, a tentar conectar...");
+                connectToBarrels();
+                
+                // Se ainda está vazia após reconexão, desiste
+                if (barrels.isEmpty()) {
+                    System.err.println("[Gateway] ✗ Não foi possível conectar a nenhum Barrel para enviar backup!");
+                    return;
+                }
+            }
+            
+            System.out.println("[Gateway] 📤 Enviando backup da URL queue para " + barrels.size() + " Barrel(s)...");
+            System.out.println("[Gateway] URLs pendentes: " + urlQueue.size() + ", URLs visitados: " + visitedURLs.size());
+            int successCount = 0;
+            int failCount = 0;
+            
+            for (int i = 0; i < barrels.size(); i++) {
+                BarrelInterface barrel = barrels.get(i);
+                String barrelName = (i < barrelNames.size()) ? barrelNames.get(i) : "Barrel#" + i;
                 try {
                     barrel.backupURLQueue(new ConcurrentLinkedQueue<>(urlQueue), 
                                         new HashSet<>(visitedURLs));
+                    successCount++;
+                    System.out.println("[Gateway] ✓ Backup enviado com sucesso para " + barrelName);
                 } catch (RemoteException e) {
-                    // Barrel pode estar offline, ignora silenciosamente
+                    failCount++;
+                    System.err.println("[Gateway] ✗ Falha ao enviar backup para " + barrelName + ": " + e.getMessage());
+                    // Remove barrel da lista se falhou
+                    barrels.remove(barrel);
                 }
             }
+            
+            System.out.println("[Gateway] 📊 Backup completo: " + successCount + " sucessos, " + failCount + " falhas");
         }).start();
     }
 
