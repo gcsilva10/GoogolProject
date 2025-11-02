@@ -109,6 +109,8 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
         
         if (isPrimaryBarrel) {
             System.out.println("[Barrel " + rmiName + "] Este é o BARREL PRIMÁRIO - guardará estado em ficheiro.");
+            // Carrega backup da URL queue se existir
+            loadURLQueueBackup();
         }
         
         // Tenta sincronizar: primeiro via RMI, depois via ficheiro
@@ -303,7 +305,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
      */
     @Override
     public synchronized void backupURLQueue(Queue<String> urlQueue, Set<String> visitedURLs) throws RemoteException {
-        System.out.println("[Barrel " + rmiName + "] Recebendo backup da URL queue da Gateway...");
+        System.out.println("[Barrel " + rmiName + "] 📥 Recebendo backup da URL queue da Gateway...");
         
         // Atualiza backup em memória
         this.urlQueueBackup = new ConcurrentLinkedQueue<>(urlQueue);
@@ -313,10 +315,11 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
         // Se for Barrel primário, guarda em ficheiro
         if (isPrimaryBarrel) {
             saveURLQueueBackup();
+        } else {
+            System.out.println("[Barrel " + rmiName + "] Backup em memória: " + 
+                             urlQueue.size() + " URLs pendentes, " + 
+                             visitedURLs.size() + " URLs visitados");
         }
-        
-        System.out.println("[Barrel " + rmiName + "] Backup URL queue: " + urlQueue.size() + 
-                         " URLs pendentes, " + visitedURLs.size() + " URLs visitados");
     }
     
     /**
@@ -327,7 +330,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
      */
     @Override
     public synchronized Object[] restoreURLQueue() throws RemoteException {
-        System.out.println("[Barrel " + rmiName + "] Gateway pediu restauro da URL queue...");
+        System.out.println("[Barrel " + rmiName + "] 📤 Gateway pediu restauro da URL queue...");
         
         // Se for Barrel primário, tenta carregar do ficheiro
         if (isPrimaryBarrel) {
@@ -338,8 +341,13 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
         result[0] = new ConcurrentLinkedQueue<>(urlQueueBackup);
         result[1] = new HashSet<>(visitedURLsBackup);
         
-        System.out.println("[Barrel " + rmiName + "] Restaurando: " + urlQueueBackup.size() + 
-                         " URLs pendentes, " + visitedURLsBackup.size() + " URLs visitados");
+        if (urlQueueBackup.isEmpty() && visitedURLsBackup.isEmpty()) {
+            System.out.println("[Barrel " + rmiName + "] ⚠️  Sem backup disponível (queue vazia)");
+        } else {
+            System.out.println("[Barrel " + rmiName + "] ✅ Enviando backup: " + 
+                             urlQueueBackup.size() + " URLs pendentes, " + 
+                             visitedURLsBackup.size() + " URLs visitados");
+        }
         
         return result;
     }
@@ -358,7 +366,9 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
                 new HashSet<>(visitedURLsBackup)
             );
             oos.writeObject(backup);
-            System.out.println("[Barrel " + rmiName + "] URL queue guardada em: " + urlQueueBackupFile);
+            System.out.println("[Barrel " + rmiName + "] ✅ URL queue guardada: " + 
+                             urlQueueBackup.size() + " URLs pendentes, " + 
+                             visitedURLsBackup.size() + " URLs visitados → " + urlQueueBackupFile);
         } catch (Exception e) {
             System.err.println("[Barrel " + rmiName + "] Erro ao guardar URL queue backup: " + e.getMessage());
         }
@@ -375,7 +385,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
     private void loadURLQueueBackup() {
         File file = new File(urlQueueBackupFile);
         if (!file.exists()) {
-            System.out.println("[Barrel " + rmiName + "] Ficheiro de backup URL queue não existe.");
+            System.out.println("[Barrel " + rmiName + "] Ficheiro de backup URL queue não existe: " + urlQueueBackupFile);
             return;
         }
         
@@ -383,7 +393,9 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
             URLQueueBackup backup = (URLQueueBackup) ois.readObject();
             this.urlQueueBackup = backup.urlQueue;
             this.visitedURLsBackup = backup.visitedURLs;
-            System.out.println("[Barrel " + rmiName + "] URL queue carregada de: " + urlQueueBackupFile);
+            System.out.println("[Barrel " + rmiName + "] ✅ URL queue carregada de ficheiro: " + 
+                             urlQueueBackup.size() + " URLs pendentes, " + 
+                             visitedURLsBackup.size() + " URLs visitados");
         } catch (Exception e) {
             System.err.println("[Barrel " + rmiName + "] Erro ao carregar URL queue backup: " + e.getMessage());
         }
