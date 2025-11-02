@@ -109,9 +109,10 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
         
         if (isPrimaryBarrel) {
             System.out.println("[Barrel " + rmiName + "] Este é o BARREL PRIMÁRIO - guardará estado em ficheiro.");
-            // Carrega backup da URL queue se existir
-            loadURLQueueBackup();
         }
+        
+        // TODOS os Barrels carregam backup da URL queue se existir
+        loadURLQueueBackup();
         
         // Tenta sincronizar: primeiro via RMI, depois via ficheiro
         syncFromOtherBarrelOrFile();
@@ -312,14 +313,8 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
         this.visitedURLsBackup = ConcurrentHashMap.newKeySet();
         this.visitedURLsBackup.addAll(visitedURLs);
         
-        // Se for Barrel primário, guarda em ficheiro
-        if (isPrimaryBarrel) {
-            saveURLQueueBackup();
-        } else {
-            System.out.println("[Barrel " + rmiName + "] Backup em memória: " + 
-                             urlQueue.size() + " URLs pendentes, " + 
-                             visitedURLs.size() + " URLs visitados");
-        }
+        // TODOS os Barrels guardam em ficheiro para redundância
+        saveURLQueueBackup();
     }
     
     /**
@@ -332,10 +327,8 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
     public synchronized Object[] restoreURLQueue() throws RemoteException {
         System.out.println("[Barrel " + rmiName + "] 📤 Gateway pediu restauro da URL queue...");
         
-        // Se for Barrel primário, tenta carregar do ficheiro
-        if (isPrimaryBarrel) {
-            loadURLQueueBackup();
-        }
+        // Tenta carregar do ficheiro (todos os Barrels fazem isso agora)
+        loadURLQueueBackup();
         
         Object[] result = new Object[2];
         result[0] = new ConcurrentLinkedQueue<>(urlQueueBackup);
