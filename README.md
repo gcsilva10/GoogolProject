@@ -8,16 +8,23 @@ Este é o projeto Googol - um motor de busca distribuído implementado com Java 
 
 O sistema agora suporta execução distribuída em diferentes máquinas na mesma rede local!
 
+### ✨ **SUPER SIMPLES: Configure apenas 2 IPs!**
+
+No `config.properties` (IGUAL em ambas as máquinas):
+```properties
+machine1.ip=192.168.1.10    # IP da Máquina #1
+machine2.ip=192.168.1.20    # IP da Máquina #2
+```
+
+**Pronto!** O sistema configura tudo automaticamente! 🚀
+
 ### Configurações Disponíveis:
 
-1. **📍 Local (uma máquina)**: Use `run.sh` - tudo corre localmente
-2. **🌍 Distribuído (duas máquinas)**: Use `run_machine1.sh` e `run_machine2.sh`
+1. **📍 Local (uma máquina)**: Use `localhost` em ambos os IPs e execute `./run.sh`
+2. **🌍 Distribuído (duas máquinas)**: Configure os IPs reais e use `./run_machine1.sh` e `./run_machine2.sh`
 
 ### Para Executar em Duas Máquinas:
 
-**Ver guia completo:** [DISTRIBUTED_SETUP.md](DISTRIBUTED_SETUP.md)
-
-**Resumo rápido:**
 ```bash
 # Máquina #1 (Gateway + Barrel0 + Downloader)
 ./run_machine1.sh
@@ -26,12 +33,9 @@ O sistema agora suporta execução distribuída em diferentes máquinas na mesma
 ./run_machine2.sh
 ```
 
-**Configuração:**
-- Edite `config.properties` em cada máquina
-- Configure os IPs: `gateway.host`, `barrel.host`, `rmi.host`
-- Use os exemplos: `config_machine1_example.properties` e `config_machine2_example.properties`
-
-📖 **Documentação detalhada com resolução de problemas:** [DISTRIBUTED_SETUP.md](DISTRIBUTED_SETUP.md)
+📖 **Guias completos:**
+- **Configuração simplificada:** [CONFIGURACAO_SIMPLES.md](CONFIGURACAO_SIMPLES.md) ⭐ **Comece aqui!**
+- **Guia detalhado com troubleshooting:** [DISTRIBUTED_SETUP.md](DISTRIBUTED_SETUP.md)
 
 ---
 

@@ -13,7 +13,7 @@ echo "=================================================="
 echo ""
 
 # Verifica se o config.properties foi configurado
-if ! grep -q "gateway.host=" config.properties; then
+if ! grep -q "machine1.ip=" config.properties; then
     echo "❌ ERRO: config.properties não está configurado!"
     echo "Por favor, configure os IPs no config.properties antes de executar."
     exit 1
@@ -22,9 +22,8 @@ fi
 # Mostra a configuração atual
 echo "📋 Configuração atual (config.properties):"
 echo "---------------------------------------------------"
-grep "rmi.host=" config.properties
-grep "gateway.host=" config.properties
-grep "barrel.host=" config.properties
+grep "machine1.ip=" config.properties
+grep "machine2.ip=" config.properties
 echo "---------------------------------------------------"
 echo ""
 
