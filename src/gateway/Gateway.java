@@ -104,7 +104,11 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
         barrels.clear();
         Registry registry;
         try {
-            registry = LocateRegistry.getRegistry();
+            // Usa configuração explícita de host e porta
+            String rmiHost = Config.getRmiHost();
+            int rmiPort = Config.getRmiPort();
+            registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
+            
             for (String name : barrelNames) {
                 try {
                     BarrelInterface barrel = (BarrelInterface) registry.lookup(name);

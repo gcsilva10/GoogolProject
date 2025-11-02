@@ -482,6 +482,10 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
 
         System.out.println("[Barrel " + rmiName + "] A tentar sincronizar via RMI com outros barrels...");
         
+        // Obtém o host e porta do RMI Registry da configuração
+        String rmiHost = Config.getRmiHost();
+        int rmiPort = Config.getRmiPort();
+        
         for (String barrelName : otherBarrelNames) {
             // Não tenta sincronizar consigo mesmo
             if (barrelName.equals(rmiName)) {
@@ -489,8 +493,8 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
             }
             
             try {
-                // Tenta conectar ao barrel
-                Registry registry = LocateRegistry.getRegistry();
+                // Tenta conectar ao barrel através do RMI Registry correto
+                Registry registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
                 BarrelInterface otherBarrel = (BarrelInterface) registry.lookup(barrelName);
                 
                 System.out.println("[Barrel " + rmiName + "] Conectado a " + barrelName + ". A copiar dados...");
