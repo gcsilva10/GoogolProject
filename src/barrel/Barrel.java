@@ -306,7 +306,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
      */
     @Override
     public synchronized void backupURLQueue(Queue<String> urlQueue, Set<String> visitedURLs) throws RemoteException {
-        System.out.println("[Barrel " + rmiName + "] 📥 Recebendo backup da URL queue da Gateway...");
+        System.out.println("[Barrel " + rmiName + "] Recebendo backup da URL queue da Gateway...");
         
         // Atualiza backup em memória
         this.urlQueueBackup = new ConcurrentLinkedQueue<>(urlQueue);
@@ -325,7 +325,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
      */
     @Override
     public synchronized Object[] restoreURLQueue() throws RemoteException {
-        System.out.println("[Barrel " + rmiName + "] 📤 Gateway pediu restauro da URL queue...");
+        System.out.println("[Barrel " + rmiName + "] Gateway pediu restauro da URL queue...");
         
         // Tenta carregar do ficheiro (todos os Barrels fazem isso agora)
         loadURLQueueBackup();
@@ -335,9 +335,9 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
         result[1] = new HashSet<>(visitedURLsBackup);
         
         if (urlQueueBackup.isEmpty() && visitedURLsBackup.isEmpty()) {
-            System.out.println("[Barrel " + rmiName + "] ⚠️  Sem backup disponível (queue vazia)");
+            System.out.println("[Barrel " + rmiName + "]   Sem backup disponível (queue vazia)");
         } else {
-            System.out.println("[Barrel " + rmiName + "] ✅ Enviando backup: " + 
+            System.out.println("[Barrel " + rmiName + "]  Enviando backup: " + 
                              urlQueueBackup.size() + " URLs pendentes, " + 
                              visitedURLsBackup.size() + " URLs visitados");
         }
@@ -359,7 +359,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
                 new HashSet<>(visitedURLsBackup)
             );
             oos.writeObject(backup);
-            System.out.println("[Barrel " + rmiName + "] ✅ URL queue guardada: " + 
+            System.out.println("[Barrel " + rmiName + "]  URL queue guardada: " + 
                              urlQueueBackup.size() + " URLs pendentes, " + 
                              visitedURLsBackup.size() + " URLs visitados → " + urlQueueBackupFile);
         } catch (Exception e) {
@@ -386,7 +386,7 @@ public class Barrel extends UnicastRemoteObject implements BarrelInterface {
             URLQueueBackup backup = (URLQueueBackup) ois.readObject();
             this.urlQueueBackup = backup.urlQueue;
             this.visitedURLsBackup = backup.visitedURLs;
-            System.out.println("[Barrel " + rmiName + "] ✅ URL queue carregada de ficheiro: " + 
+            System.out.println("[Barrel " + rmiName + "]  URL queue carregada de ficheiro: " + 
                              urlQueueBackup.size() + " URLs pendentes, " + 
                              visitedURLsBackup.size() + " URLs visitados");
         } catch (Exception e) {

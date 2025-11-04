@@ -136,9 +136,9 @@ public class Client {
                         break;
                 }
             } catch (RemoteException e) {
-                System.err.println("\n✗ ERRO: Gateway não está acessível!");
+                System.err.println("\nERRO: Gateway nao esta acessivel!");
                 System.err.println("Detalhes: " + e.getMessage());
-                System.err.println("\nA Gateway caiu ou está offline. O cliente vai encerrar.");
+                System.err.println("\nA Gateway caiu ou esta offline. O cliente vai encerrar.");
                 running = false;
                 break;
             } catch (Exception e) {
@@ -210,7 +210,7 @@ public class Client {
             System.out.println("\nDesregistado. Voltando ao menu principal...\n");
             
         } catch (RemoteException e) {
-            System.err.println("\n✗ ERRO: Gateway não está acessível!");
+            System.err.println("\nERRO: Gateway nao esta acessivel!");
             System.err.println("Detalhes: " + e.getMessage());
             System.err.println("\nA Gateway caiu. O cliente vai encerrar.");
             System.exit(1);

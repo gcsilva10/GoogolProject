@@ -332,11 +332,11 @@ public class Downloader implements Runnable {
                                          update.words, update.newLinksOnPage);
                         successfullySent.add(update);
                         System.out.println("[Downloader " + Thread.currentThread().getId() + 
-                                          "] ✓ Reenviado com sucesso: " + update.url + " para " + barrelName);
+                                          "] Reenviado com sucesso: " + update.url + " para " + barrelName);
                     } catch (RemoteException e) {
                         // Esta atualização específica falhou, mas continuamos com as outras
                         System.err.println("[Downloader " + Thread.currentThread().getId() + 
-                                          "] ✗ Falha ao reenviar " + update.url + " para " + barrelName);
+                                          "] Falha ao reenviar " + update.url + " para " + barrelName);
                         break; // Se uma falha, provavelmente o barrel caiu novamente
                     }
                 }
@@ -347,7 +347,7 @@ public class Downloader implements Runnable {
                     if (updates.isEmpty()) {
                         pendingUpdates.remove(barrelName);
                         System.out.println("[Downloader " + Thread.currentThread().getId() + 
-                                          "] ✓ Todas as atualizações pendentes foram enviadas para " + barrelName);
+                                          "] Todas as atualizacoes pendentes foram enviadas para " + barrelName);
                     }
                 }
 

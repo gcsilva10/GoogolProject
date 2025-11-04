@@ -127,11 +127,11 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                     try {
                         BarrelInterface barrel = (BarrelInterface) registry.lookup(name);
                         barrels.add(barrel);
-                        System.out.println("[Gateway] ✓ Ligado com sucesso a " + name);
+                        System.out.println("[Gateway] Ligado com sucesso a " + name);
                         connected = true;
                     } catch (Exception e) {
                         if (attempt < maxRetries) {
-                            System.out.println("[Gateway] ⏳ Tentativa " + attempt + "/" + maxRetries + 
+                            System.out.println("[Gateway] Tentativa " + attempt + "/" + maxRetries + 
                                              " para conectar a " + name + " falhou. A aguardar " + 
                                              (retryDelay/1000) + "s...");
                             try {
@@ -141,17 +141,17 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                                 break;
                             }
                         } else {
-                            System.err.println("[Gateway] ✗ Falha ao ligar a " + name + 
-                                             " após " + maxRetries + " tentativas: " + e.getMessage());
+                            System.err.println("[Gateway] Falha ao ligar a " + name + 
+                                             " apos " + maxRetries + " tentativas: " + e.getMessage());
                         }
                     }
                 }
             }
             
             if (barrels.isEmpty()) {
-                System.err.println("[Gateway] ⚠️  AVISO: Nenhum Barrel conectado!");
+                System.err.println("[Gateway]   AVISO: Nenhum Barrel conectado!");
             } else {
-                System.out.println("[Gateway] 📊 Conectado a " + barrels.size() + " de " + 
+                System.out.println("[Gateway] Conectado a " + barrels.size() + " de " + 
                                  barrelNames.size() + " Barrel(s) configurados");
             }
             
@@ -530,13 +530,13 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                                 bestVisited = visited;
                             }
                             
-                            System.out.println("[Gateway] ✓ Barrel " + barrelName + " tem backup: " + 
+                            System.out.println("[Gateway] Barrel " + barrelName + " tem backup: " + 
                                              queue.size() + " URLs pendentes, " + visited.size() + " visitados");
                             recovered = true;
                         }
                     } catch (Exception e) {
                         if (attempt < maxRetries) {
-                            System.out.println("[Gateway] ⏳ Tentativa " + attempt + "/" + maxRetries + 
+                            System.out.println("[Gateway] Tentativa " + attempt + "/" + maxRetries + 
                                              " para recuperar de " + barrelName + " falhou. A aguardar...");
                             try {
                                 Thread.sleep(retryDelay);
@@ -545,8 +545,8 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                                 break;
                             }
                         } else {
-                            System.err.println("[Gateway] ✗ Não foi possível recuperar de " + barrelName + 
-                                             " após " + maxRetries + " tentativas");
+                            System.err.println("[Gateway] Nao foi possivel recuperar de " + barrelName + 
+                                             " apos " + maxRetries + " tentativas");
                         }
                     }
                 }
@@ -555,7 +555,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             if (bestQueue != null && bestVisited != null) {
                 urlQueue.addAll(bestQueue);
                 visitedURLs.addAll(bestVisited);
-                System.out.println("[Gateway] ✓ URL queue recuperada com sucesso! " + 
+                System.out.println("[Gateway] URL queue recuperada com sucesso! " + 
                                  urlQueue.size() + " URLs pendentes, " + visitedURLs.size() + " URLs visitados");
             } else {
                 System.out.println("[Gateway] Nenhum backup encontrado. A iniciar com queue vazia.");
@@ -587,17 +587,17 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
         new Thread(() -> {
             // Se não há Barrels conectados, tenta reconectar
             if (barrels.isEmpty()) {
-                System.out.println("[Gateway] ⚠️  Lista de Barrels vazia, a tentar conectar...");
+                System.out.println("[Gateway]   Lista de Barrels vazia, a tentar conectar...");
                 connectToBarrels();
                 
                 // Se ainda está vazia após reconexão, desiste
                 if (barrels.isEmpty()) {
-                    System.err.println("[Gateway] ✗ Não foi possível conectar a nenhum Barrel para enviar backup!");
+                    System.err.println("[Gateway] Nao foi possivel conectar a nenhum Barrel para enviar backup!");
                     return;
                 }
             }
             
-            System.out.println("[Gateway] 📤 Enviando backup da URL queue para " + barrels.size() + " Barrel(s)...");
+            System.out.println("[Gateway] Enviando backup da URL queue para " + barrels.size() + " Barrel(s)...");
             System.out.println("[Gateway] URLs pendentes: " + urlQueue.size() + ", URLs visitados: " + visitedURLs.size());
             int successCount = 0;
             int failCount = 0;
@@ -609,16 +609,16 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                     barrel.backupURLQueue(new ConcurrentLinkedQueue<>(urlQueue), 
                                         new HashSet<>(visitedURLs));
                     successCount++;
-                    System.out.println("[Gateway] ✓ Backup enviado com sucesso para " + barrelName);
+                    System.out.println("[Gateway] Backup enviado com sucesso para " + barrelName);
                 } catch (RemoteException e) {
                     failCount++;
-                    System.err.println("[Gateway] ✗ Falha ao enviar backup para " + barrelName + ": " + e.getMessage());
+                    System.err.println("[Gateway] Falha ao enviar backup para " + barrelName + ": " + e.getMessage());
                     // Remove barrel da lista se falhou
                     barrels.remove(barrel);
                 }
             }
             
-            System.out.println("[Gateway] 📊 Backup completo: " + successCount + " sucessos, " + failCount + " falhas");
+            System.out.println("[Gateway] Backup completo: " + successCount + " sucessos, " + failCount + " falhas");
         }).start();
     }
 
