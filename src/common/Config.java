@@ -111,7 +111,7 @@ public class Config {
      * Obtém o hostname/IP do RMI Registry.
      * O RMI Registry está sempre na Máquina #1 (onde está a Gateway).
      * 
-     * @return O hostname configurado (IP da Máquina #1)
+     * @return O hostname configurado (IP da Máquina #1 ou localhost em modo local)
      */
     public static String getRmiHost() {
         return getMachine1IP();
@@ -127,12 +127,42 @@ public class Config {
     }
     
     /**
+     * Obtém o modo de execução do sistema.
+     * 
+     * @return "local" ou "distributed" (padrão: "local")
+     */
+    public static String getDeploymentMode() {
+        return get("deployment.mode", "local").toLowerCase();
+    }
+    
+    /**
+     * Verifica se o sistema está em modo local.
+     * 
+     * @return true se deployment.mode=local
+     */
+    public static boolean isLocalMode() {
+        return "local".equals(getDeploymentMode());
+    }
+    
+    /**
+     * Verifica se o sistema está em modo distribuído.
+     * 
+     * @return true se deployment.mode=distributed
+     */
+    public static boolean isDistributedMode() {
+        return "distributed".equals(getDeploymentMode());
+    }
+    
+    /**
      * Obtém o IP da Máquina #1.
      * Máquina #1 corre: Gateway + Barrel0 + Downloader + RMI Registry
      * 
-     * @return O IP da Máquina #1 (padrão: "localhost")
+     * @return O IP da Máquina #1 em modo distribuído, ou "localhost" em modo local
      */
     public static String getMachine1IP() {
+        if (isLocalMode()) {
+            return "localhost";
+        }
         return get("machine1.ip", "localhost");
     }
     
@@ -140,9 +170,12 @@ public class Config {
      * Obtém o IP da Máquina #2.
      * Máquina #2 corre: Barrel1 + Downloader + Cliente
      * 
-     * @return O IP da Máquina #2 (padrão: "localhost")
+     * @return O IP da Máquina #2 em modo distribuído, ou "localhost" em modo local
      */
     public static String getMachine2IP() {
+        if (isLocalMode()) {
+            return "localhost";
+        }
         return get("machine2.ip", "localhost");
     }
     

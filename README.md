@@ -931,15 +931,21 @@ mkdir -p bin
 javac -d bin -cp "lib/jsoup-1.21.2.jar:." $(find src -name "*.java")
 ```
 
-### 6.3 Execução
+### 6.3 Configuração do Sistema
 
-**Configuração Local (uma máquina):**
+O sistema suporta dois modos de execução controlados pelo ficheiro `config.properties`:
 
-Editar config.properties:
+#### 6.3.1 Modo Local (todos os componentes numa máquina)
+
+Editar `config.properties`:
 
 ```properties
-rmi.host=localhost
-barrels.count=2
+# Define o modo de execução como local
+deployment.mode=local
+
+# Os IPs abaixo são ignorados em modo local
+machine1.ip=194.210.39.233
+machine2.ip=194.210.33.76
 ```
 
 Executar script automático:
@@ -950,67 +956,73 @@ Executar script automático:
 
 O script abre automaticamente todos os terminais necessários.
 
-**Execução Manual:**
+#### 6.3.2 Modo Distribuído (componentes em duas máquinas)
 
-Terminal 1 - RMI Registry:
+Editar `config.properties`:
+
+```properties
+# Define o modo de execução como distribuído
+deployment.mode=distributed
+
+# IP da Máquina #1 (Gateway + Barrel0 + Downloader + RMI Registry)
+machine1.ip=192.168.1.10
+
+# IP da Máquina #2 (Barrel1 + Downloader + Cliente)
+machine2.ip=192.168.1.20
+```
+
+Executar scripts automáticos:
+
+```bash
+# Na Máquina #1
+./run_machine1.sh
+
+# Na Máquina #2
+./run_machine2.sh
+```
+
+**Importante:** Em modo distribuído:
+- A Máquina #1 executa o RegistrationService que permite registos remotos
+- A Máquina #2 conecta-se remotamente ao RMI Registry da Máquina #1
+- Todos os componentes usam automaticamente os IPs configurados
+
+### 6.4 Execução Manual
+
+**Terminal 1 - RMI Registry:**
 
 ```bash
 rmiregistry -J-Djava.rmi.server.codebase=file:bin/ 1099
 ```
 
-Terminal 2 - Barrel 0:
+**Terminal 2 - Barrel 0:**
 
 ```bash
 java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" barrel.Barrel 0
 ```
 
-Terminal 3 - Barrel 1:
+**Terminal 3 - Barrel 1:**
 
 ```bash
 java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" barrel.Barrel 1
 ```
 
-Terminal 4 - Gateway:
+**Terminal 4 - Gateway:**
 
 ```bash
 java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" gateway.Gateway
 ```
 
-Terminal 5 - Downloader:
+**Terminal 5 - Downloader:**
 
 ```bash
 java -Djava.security.policy=security.policy -cp "bin:lib/jsoup-1.21.2.jar" downloader.Downloader
 ```
 
-Terminal 6 - Client:
+**Terminal 6 - Client:**
 
 ```bash
 java -Djava.security.policy=security.policy -cp "bin" client.Client
 ```
-
-### 6.4 Configuração Distribuída (duas máquinas)
-
-Editar config.properties:
-
-```properties
-# IP da Máquina #1 (Gateway + Barrel0 + Downloader + RMI Registry)
-machine1.ip=IP
-
-# IP da Máquina #2 (Barrel1 + Downloader + Cliente)
-machine2.ip=IP
-```
-
-Executar script automático:
-
-```bash
-# No PC 1
-./run_machine1
-
-# No PC 2
-./run_machine2
-```
-
-O script abre automaticamente todos os terminais necessários.
 
 ---
 

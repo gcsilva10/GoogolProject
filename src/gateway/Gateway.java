@@ -643,6 +643,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             int rmiPort = Config.getRmiPort();
             
             System.out.println("[Gateway] A iniciar com nome: " + gatewayName);
+            System.out.println("[Gateway] Modo de execução: " + Config.getDeploymentMode());
             System.out.println("[Gateway] Hostname RMI configurado: " + gatewayHost);
             System.out.println("[Gateway] Barrels configurados: " + barrelNames);
             System.out.println("[Gateway] RMI Registry: " + rmiHost + ":" + rmiPort);

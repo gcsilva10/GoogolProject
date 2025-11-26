@@ -50,6 +50,8 @@ public class RegistrationServiceImpl extends UnicastRemoteObject implements Regi
         try {
             int rmiPort = Config.getRmiPort();
             
+            System.out.println("[RegistrationService] Modo de execução: " + Config.getDeploymentMode());
+            
             // Obtém ou cria o registry
             Registry registry;
             try {
