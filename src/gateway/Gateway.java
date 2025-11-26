@@ -1,20 +1,17 @@
 package gateway;
 
 import common.BarrelInterface;
+import common.Config;
 import common.GatewayInterface;
 import common.SearchResult;
 import common.StatisticsCallback;
-import common.Config;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+
 
 /**
  * Implementação da Gateway RPC/RMI - ponto central de coordenação do sistema Googol.
@@ -235,11 +233,13 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             if (barrel == null) {
                 connectToBarrels();
                 if (barrels.isEmpty()) {
-                    throw new RemoteException("Nenhum Storage Barrel está disponível.");
+                    System.out.println("[Gateway] Nenhum Storage Barrel está disponível.");
+                    return new ArrayList<>();
                 }
                 barrel = getNextBarrel();
                 if (barrel == null) {
-                     throw new RemoteException("Nenhum Storage Barrel disponível após reconexão.");
+                     System.out.println("[Gateway] Nenhum Storage Barrel disponível após reconexão.");
+                     return new ArrayList<>();
                 }
             }
 
@@ -266,7 +266,8 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             }
         }
         
-        throw new RemoteException("Falha ao contactar todos os Storage Barrels disponíveis.");
+        System.out.println("[Gateway] Falha ao contactar todos os Storage Barrels disponíveis.");
+        return new ArrayList<>();
     }
 
     /**
@@ -283,11 +284,13 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
              if (barrel == null) {
                 connectToBarrels();
                 if (barrels.isEmpty()) {
-                    throw new RemoteException("Nenhum Storage Barrel está disponível.");
+                    System.out.println("[Gateway] Nenhum Storage Barrel está disponível.");
+                    return new ArrayList<>();
                 }
                 barrel = getNextBarrel();
                  if (barrel == null) {
-                     throw new RemoteException("Nenhum Storage Barrel disponível após reconexão.");
+                     System.out.println("[Gateway] Nenhum Storage Barrel disponível após reconexão.");
+                     return new ArrayList<>();
                 }
             }
 
@@ -299,7 +302,8 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
             }
         }
         
-        throw new RemoteException("Falha ao contactar todos os Storage Barrels para obter backlinks.");
+        System.out.println("[Gateway] Falha ao contactar todos os Storage Barrels para obter backlinks.");
+        return new ArrayList<>();
     }
 
         
