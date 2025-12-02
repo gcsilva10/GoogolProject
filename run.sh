@@ -59,12 +59,14 @@ for i in $(seq 0 $((BARREL_COUNT - 1))); do
     osascript -e "tell app \"Terminal\" to do script \"echo 'Terminal $TERMINAL_NUM: Barrel $i'; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP barrel.Barrel $i\""
 done
 
-sleep 1 # Dá tempo aos barrels para se registarem
+sleep 2 # Dá tempo aos barrels para se registarem
 
 # Terminal Gateway
 GATEWAY_TERMINAL=$((BARREL_COUNT + 2))
 echo "A abrir Terminal $GATEWAY_TERMINAL: Gateway"
 osascript -e "tell app \"Terminal\" to do script \"echo 'Terminal $GATEWAY_TERMINAL: Gateway'; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP gateway.Gateway\""
+
+sleep 3 # Aguarda o Gateway estar pronto antes de iniciar Downloader e Cliente
 
 # Terminal Downloader
 DOWNLOADER_TERMINAL=$((BARREL_COUNT + 3))
@@ -77,5 +79,12 @@ sleep 1
 CLIENT_TERMINAL=$((BARREL_COUNT + 4))
 echo "A abrir Terminal $CLIENT_TERMINAL: Cliente"
 osascript -e "tell app \"Terminal\" to do script \"echo 'Terminal $CLIENT_TERMINAL: Cliente'; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp bin client.Client\""
+
+sleep 2
+
+# Terminal Spring Boot Web Application
+WEB_TERMINAL=$((BARREL_COUNT + 5))
+echo "A abrir Terminal $WEB_TERMINAL: Spring Boot Web Application"
+osascript -e "tell app \"Terminal\" to do script \"echo 'Terminal $WEB_TERMINAL: Spring Boot Web Application'; cd '$(pwd)/googol-web'; ./mvnw spring-boot:run\""
 
 echo "Terminais abertos."

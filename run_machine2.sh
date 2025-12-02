@@ -69,6 +69,12 @@ sleep 2
 echo "3️⃣  Abrir Terminal: Cliente RMI"
 osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Cliente ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp bin client.Client\""
 
+sleep 2
+
+# 4. Terminal: Spring Boot Web Application
+echo "4️⃣  Abrir Terminal: Spring Boot Web Application"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Spring Boot Web ====='; cd '$(pwd)/googol-web'; ./mvnw spring-boot:run\""
+
 echo ""
 echo "=================================================="
 echo "✅ Todos os terminais da Máquina #2 foram abertos!"
@@ -78,11 +84,15 @@ echo "Componentes iniciados:"
 echo "  ✅ Storage Barrel 1"
 echo "  ✅ Downloader"
 echo "  ✅ Cliente RMI (interativo)"
+echo "  ✅ Spring Boot Web Application"
 echo ""
-echo "O Cliente está em modo interativo no último terminal."
+echo "O Cliente está em modo interativo no terceiro terminal."
+echo ""
+echo "🌐 A aplicação web estará disponível em: http://localhost:8080"
 echo ""
 echo "Para parar todos os serviços, feche os terminais ou use:"
 echo "  pkill -f 'barrel.Barrel'"
 echo "  pkill -f 'downloader.Downloader'"
 echo "  pkill -f 'client.Client'"
+echo "  pkill -f 'spring-boot:run'"
 echo ""

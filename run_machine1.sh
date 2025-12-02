@@ -74,6 +74,12 @@ sleep 2
 echo "4️⃣  Abrir Terminal: Downloader"
 osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: Downloader ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP downloader.Downloader\""
 
+sleep 2
+
+# 5. Terminal: Spring Boot Web Application
+echo "5️⃣  Abrir Terminal: Spring Boot Web Application"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #1: Spring Boot Web ====='; cd '$(pwd)/googol-web'; ./mvnw spring-boot:run\""
+
 echo ""
 echo "=================================================="
 echo "✅ Todos os terminais da Máquina #1 foram abertos!"
@@ -84,13 +90,17 @@ echo "  ✅ Registration Service + RMI Registry"
 echo "  ✅ Gateway"
 echo "  ✅ Storage Barrel 0"
 echo "  ✅ Downloader"
+echo "  ✅ Spring Boot Web Application"
 echo ""
 echo "⚠️  IMPORTANTE: O Registration Service permite que"
 echo "    componentes remotos (Máquina #2) se registem no RMI Registry."
+echo ""
+echo "🌐 A aplicação web estará disponível em: http://localhost:8080"
 echo ""
 echo "Para parar todos os serviços, feche os terminais ou use:"
 echo "  pkill -f 'RegistrationServiceImpl'"
 echo "  pkill -f 'gateway.Gateway'"
 echo "  pkill -f 'barrel.Barrel'"
 echo "  pkill -f 'downloader.Downloader'"
+echo "  pkill -f 'spring-boot:run'"
 echo ""

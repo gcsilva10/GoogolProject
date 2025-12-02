@@ -28,17 +28,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementação da Gateway RPC/RMI - ponto central de coordenação do sistema Googol.
- * 
- * <p>Responsabilidades principais:</p>
+ * * <p>Responsabilidades principais:</p>
  * <ul>
- *   <li>Gerir fila de URLs para indexação (produtor-consumidor com Downloaders)</li>
- *   <li>Distribuir pesquisas pelos Barrels usando round-robin com failover</li>
- *   <li>Agregar estatísticas do sistema e notificar Clientes via callbacks</li>
- *   <li>Registar URLs indexados em ficheiro de log</li>
- *   <li>Implementar balanceamento de carga e tolerância a falhas</li>
+ * <li>Gerir fila de URLs para indexação (produtor-consumidor com Downloaders)</li>
+ * <li>Distribuir pesquisas pelos Barrels usando round-robin com failover</li>
+ * <li>Agregar estatísticas do sistema e notificar Clientes via callbacks</li>
+ * <li>Registar URLs indexados em ficheiro de log</li>
+ * <li>Implementar balanceamento de carga e tolerância a falhas</li>
  * </ul>
- * 
- * <p>Thread-safety: Utiliza estruturas concorrentes (ConcurrentHashMap, CopyOnWriteArrayList)
+ * * <p>Thread-safety: Utiliza estruturas concorrentes (ConcurrentHashMap, CopyOnWriteArrayList)
  * e sincronização explícita onde necessário.</p>
  */
 public class Gateway extends UnicastRemoteObject implements GatewayInterface {
@@ -61,16 +59,14 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
 
     /**
      * Cria uma nova instância da Gateway e inicializa todos os componentes.
-     * 
-     * <p>Sequência de inicialização:</p>
+     * * <p>Sequência de inicialização:</p>
      * <ol>
-     *   <li>Inicializa estruturas de dados (queues, maps, sets)</li>
-     *   <li>Tenta recuperar URL queue dos Barrels (tolerância a falhas)</li>
-     *   <li>Conecta aos Barrels via RMI</li>
-     *   <li>Inicia thread de monitorização de estatísticas</li>
+     * <li>Inicializa estruturas de dados (queues, maps, sets)</li>
+     * <li>Tenta recuperar URL queue dos Barrels (tolerância a falhas)</li>
+     * <li>Conecta aos Barrels via RMI</li>
+     * <li>Inicia thread de monitorização de estatísticas</li>
      * </ol>
-     * 
-     * @param barrelNames Lista de nomes RMI dos Barrels disponíveis
+     * * @param barrelNames Lista de nomes RMI dos Barrels disponíveis
      * @throws RemoteException Se houver falha ao exportar o objeto RMI
      */
     protected Gateway(List<String> barrelNames) throws RemoteException {
@@ -100,12 +96,11 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
      * Conecta (ou reconecta) a todos os Barrels configurados via RMI Registry.
      * Implementa retry com espera para ambientes distribuídos onde Barrels
      * podem demorar a iniciar ou estar em máquinas diferentes.
-     * 
-     * <p>Estratégia de retry:</p>
+     * * <p>Estratégia de retry:</p>
      * <ul>
-     *   <li>Tenta conectar a cada Barrel até 10 vezes</li>
-     *   <li>Espera 2 segundos entre cada tentativa</li>
-     *   <li>Barrels que não estão acessíveis são ignorados</li>
+     * <li>Tenta conectar a cada Barrel até 10 vezes</li>
+     * <li>Espera 2 segundos entre cada tentativa</li>
+     * <li>Barrels que não estão acessíveis são ignorados</li>
      * </ul>
      */
     private void connectToBarrels() {
@@ -163,8 +158,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Obtém o próximo Barrel a usar para pesquisa usando algoritmo round-robin.
      * Garante distribuição uniforme de carga entre Barrels ativos.
-     * 
-     * @return Referência RMI para um Barrel, ou null se nenhum estiver disponível
+     * * @return Referência RMI para um Barrel, ou null se nenhum estiver disponível
      */
     private BarrelInterface getNextBarrel() {
         if (barrels.isEmpty()) {
@@ -177,11 +171,9 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     
     /**
      * {@inheritDoc}
-     * 
-     * <p>Implementa deduplicação de URLs (ignora duplicados) e persiste
+     * * <p>Implementa deduplicação de URLs (ignora duplicados) e persiste
      * todos os URLs indexados em ficheiro de log.</p>
-     * 
-     * <p><b>Backup automático:</b> Envia backup da URL queue para os Barrels
+     * * <p><b>Backup automático:</b> Envia backup da URL queue para os Barrels
      * imediatamente após adicionar o URL (event-driven).</p>
      */
     @Override
@@ -210,13 +202,12 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
 
     /**
      * {@inheritDoc}
-     * 
-     * <p>Implementa:</p>
+     * * <p>Implementa:</p>
      * <ul>
-     *   <li>Round-robin para balanceamento de carga</li>
-     *   <li>Failover automático se um Barrel falhar</li>
-     *   <li>Atualização de estatísticas (top searches, tempos de resposta)</li>
-     *   <li>Ordenação final por relevância (backlinks)</li>
+     * <li>Round-robin para balanceamento de carga</li>
+     * <li>Failover automático se um Barrel falhar</li>
+     * <li>Atualização de estatísticas (top searches, tempos de resposta)</li>
+     * <li>Ordenação final por relevância (backlinks)</li>
      * </ul>
      */
     @Override
@@ -259,6 +250,14 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
                 barrelResponseTimes.merge(barrelName, duration, Long::sum);
                 barrelSearchCounts.computeIfAbsent(barrelName, k -> new AtomicInteger(0)).incrementAndGet();
 
+                // CORREÇÃO APLICADA AQUI:
+                // Converter para ArrayList para permitir ordenação (evita UnsupportedOperationException
+                // se o Barrel retornar uma lista imutável como List.of())
+                if (results.isEmpty()) {
+                    return new ArrayList<>();
+                }
+                results = new ArrayList<>(results);
+
                 results.sort((r1, r2) -> Integer.compare(r2.getRelevance(), r1.getRelevance()));
 
                 return results;
@@ -274,8 +273,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
 
     /**
      * {@inheritDoc}
-     * 
-     * <p>Implementa failover automático tentando múltiplos Barrels se necessário.</p>
+     * * <p>Implementa failover automático tentando múltiplos Barrels se necessário.</p>
      */
     @Override
     public List<String> getBacklinks(String url) throws RemoteException {
@@ -319,10 +317,8 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
 
     /**
      * {@inheritDoc}
-     * 
-     * <p>Implementa o padrão produtor-consumidor: remove e retorna um URL da fila.</p>
-     * 
-     * <p><b>Backup automático:</b> Se um URL foi removido, envia backup atualizado
+     * * <p>Implementa o padrão produtor-consumidor: remove e retorna um URL da fila.</p>
+     * * <p><b>Backup automático:</b> Se um URL foi removido, envia backup atualizado
      * da queue para os Barrels (event-driven).</p>
      */
     @Override
@@ -339,8 +335,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     
     /**
      * {@inheritDoc}
-     * 
-     * <p>Envia estatísticas iniciais imediatamente após registo bem-sucedido.</p>
+     * * <p>Envia estatísticas iniciais imediatamente após registo bem-sucedido.</p>
      */
     @Override
     public void registerStatisticsCallback(StatisticsCallback callback) throws RemoteException {
@@ -369,8 +364,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Notifica todos os callbacks registados com as novas estatísticas.
      * Remove automaticamente callbacks que falharem (Clientes desconectados).
-     * 
-     * @param statistics String formatada com as estatísticas
+     * * @param statistics String formatada com as estatísticas
      */
     private void notifyStatisticsCallbacks(String statistics) {
         List<StatisticsCallback> failedCallbacks = new ArrayList<>();
@@ -412,8 +406,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Constrói a string formatada com todas as estatísticas do sistema.
      * Inclui top 10 pesquisas, Barrels ativos e tempos médios de resposta.
-     * 
-     * @return String formatada com estatísticas completas
+     * * @return String formatada com estatísticas completas
      * @throws RemoteException Se houver falha ao comunicar com os Barrels
      */
     private String buildStatistics() throws RemoteException {
@@ -487,18 +480,15 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Recupera o backup da URL queue guardado nos Barrels após reinício da Gateway.
      * Implementa tolerância a falhas permitindo que a Gateway recupere o seu estado.
-     * 
-     * <p>Estratégia de recuperação:</p>
+     * * <p>Estratégia de recuperação:</p>
      * <ol>
-     *   <li>Tenta conectar aos Barrels com retry (até 5 tentativas)</li>
-     *   <li>Obtém backup de cada Barrel disponível</li>
-     *   <li>Escolhe o backup com mais URLs (estado mais completo)</li>
-     *   <li>Restaura urlQueue e visitedURLs</li>
+     * <li>Tenta conectar aos Barrels com retry (até 5 tentativas)</li>
+     * <li>Obtém backup de cada Barrel disponível</li>
+     * <li>Escolhe o backup com mais URLs (estado mais completo)</li>
+     * <li>Restaura urlQueue e visitedURLs</li>
      * </ol>
-     * 
-     * <p>Se nenhum Barrel tiver backup, inicia com queues vazias.</p>
-     * 
-     * <p>Chamado automaticamente no construtor da Gateway.</p>
+     * * <p>Se nenhum Barrel tiver backup, inicia com queues vazias.</p>
+     * * <p>Chamado automaticamente no construtor da Gateway.</p>
      */
     private void recoverURLQueueFromBarrels() {
         System.out.println("[Gateway] Tentando recuperar URL queue dos Barrels...");
@@ -575,17 +565,14 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Envia backup da URL queue para todos os Barrels disponíveis.
      * Implementa backup event-driven: chamado sempre que a queue é modificada.
-     * 
-     * <p>Pontos de invocação:</p>
+     * * <p>Pontos de invocação:</p>
      * <ul>
-     *   <li>{@link #indexNewURL(String)} - Quando novo URL é adicionado</li>
-     *   <li>{@link #getURLToCrawl()} - Quando URL é removido (consumido)</li>
+     * <li>{@link #indexNewURL(String)} - Quando novo URL é adicionado</li>
+     * <li>{@link #getURLToCrawl()} - Quando URL é removido (consumido)</li>
      * </ul>
-     * 
-     * <p><b>Execução assíncrona:</b> Cria thread separada para não bloquear
+     * * <p><b>Execução assíncrona:</b> Cria thread separada para não bloquear
      * a operação principal. Barrels offline são ignorados silenciosamente.</p>
-     * 
-     * <p>Garante que todos os Barrels têm sempre o estado mais recente
+     * * <p>Garante que todos os Barrels têm sempre o estado mais recente
      * da URL queue para permitir recuperação da Gateway.</p>
      */
     private void backupURLQueueToBarrels() {
@@ -631,9 +618,7 @@ public class Gateway extends UnicastRemoteObject implements GatewayInterface {
     /**
      * Método principal para iniciar a Gateway.
      * Configura RMI, conecta ao Registry e exporta a Gateway como serviço RMI.
-     * 
-     * @param args Argumentos de linha de comando (não utilizados)
-```
+     * * @param args Argumentos de linha de comando (não utilizados)
      */
     public static void main(String[] args) {
         System.setProperty("java.security.policy", "security.policy");
