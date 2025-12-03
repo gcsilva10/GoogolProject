@@ -1,98 +1,69 @@
 #!/bin/bash
 # Script de execução para Máquina #2
-# Corre: 1 downloader, 1 storage barrel (Barrel1) e 1 cliente RMI
+# Corre: Barrel 1, Downloader, Cliente RMI (Consola) e Web Server (Spring Boot)
 
 echo "=================================================="
 echo "  GOOGOL - Configuração Máquina #2"
 echo "=================================================="
-echo "Esta máquina vai executar:"
-echo "  - 1 Storage Barrel (GoogolBarrel1)"
-echo "  - 1 Downloader"
-echo "  - 1 Cliente RMI (modo interativo)"
+
+# 1. Ler IPs do config.properties
+MACHINE1_IP=$(grep "^machine1.ip=" config.properties | cut -d'=' -f2 | tr -d '\r')
+MACHINE2_IP=$(grep "^machine2.ip=" config.properties | cut -d'=' -f2 | tr -d '\r')
+
+if [ -z "$MACHINE1_IP" ] || [ -z "$MACHINE2_IP" ]; then
+    echo "❌ ERRO: Não foi possível ler os IPs do config.properties."
+    exit 1
+fi
+
+echo "📍 IP da Gateway (Máquina 1): $MACHINE1_IP"
+echo "📍 IP desta máquina (Máquina 2): $MACHINE2_IP"
 echo "=================================================="
 echo ""
 
-# Verifica se o config.properties foi configurado
-if ! grep -q "machine1.ip=" config.properties; then
-    echo "❌ ERRO: config.properties não está configurado!"
-    echo "Por favor, configure os IPs no config.properties antes de executar."
-    exit 1
+# Verifica compilação Backend
+if [ ! -d "bin" ]; then
+    echo "🔨 A compilar o Backend..."
+    make
 fi
 
-# Mostra a configuração atual
-echo "📋 Configuração atual (config.properties):"
-echo "---------------------------------------------------"
-grep "machine1.ip=" config.properties
-grep "machine2.ip=" config.properties
-echo "---------------------------------------------------"
-echo ""
-
-read -p "Pressione ENTER para continuar ou Ctrl+C para cancelar..."
-echo ""
-
-# Compilar o projeto
-echo "🔨 A compilar o projeto..."
-make clean
-make
-if [ $? -ne 0 ]; then
-    echo "❌ Erro na compilação!"
-    exit 1
-fi
-echo "✅ Compilação concluída"
-echo ""
-
-# Define o Classpath
 JSOUP_JAR=$(ls lib/jsoup-*.jar 2>/dev/null | head -n 1)
-if [ -z "$JSOUP_JAR" ]; then
-    echo "❌ Erro: Ficheiro jsoup-*.jar não encontrado na pasta /lib"
-    exit 1
-fi
 CP="bin:$JSOUP_JAR"
+RMI_OPTS="-Djava.rmi.server.hostname=$MACHINE2_IP -Djava.security.policy=security.policy"
+WEB_DIR="googol-web"
 
-# Navega para o diretório do script
 cd "$(dirname "$0")"
 
-echo "🚀 A abrir terminais para cada componente..."
-echo ""
+echo "🚀 A abrir terminais..."
 
-# 1. Terminal: Barrel 1
+# 1. Barrel 1
 echo "1️⃣  Abrir Terminal: Storage Barrel 1"
-osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Barrel 1 ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP barrel.Barrel 1\""
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Barrel 1 ====='; cd '$(pwd)'; java $RMI_OPTS -cp $CP barrel.Barrel 1\""
 sleep 2
 
-# 2. Terminal: Downloader
+# 2. Downloader
 echo "2️⃣  Abrir Terminal: Downloader"
-osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Downloader ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp $CP downloader.Downloader\""
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Downloader ====='; cd '$(pwd)'; java $RMI_OPTS -cp $CP downloader.Downloader\""
 sleep 2
 
-# 3. Terminal: Cliente (interativo)
-echo "3️⃣  Abrir Terminal: Cliente RMI"
-osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Cliente ====='; cd '$(pwd)'; java -Djava.security.policy=security.policy -cp bin client.Client\""
-
+# 3. Cliente Consola
+echo "3️⃣  Abrir Terminal: Cliente RMI (Consola)"
+osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Cliente Consola ====='; cd '$(pwd)'; java $RMI_OPTS -cp bin client.Client\""
 sleep 2
 
-# 4. Terminal: Spring Boot Web Application
-echo "4️⃣  Abrir Terminal: Spring Boot Web Application"
-osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Spring Boot Web ====='; cd '$(pwd)/googol-web'; ./mvnw spring-boot:run\""
+# 4. Web Server (Spring Boot) - COM CONFIGURAÇÃO AUTOMÁTICA
+if [ -d "$WEB_DIR" ]; then
+    echo "4️⃣  Abrir Terminal: Web Server (Spring Boot)"
+    chmod +x "$WEB_DIR/mvnw"
+    
+    # AQUI ESTÁ A CORREÇÃO:
+    # Passamos o IP da Máquina 1 como argumento para o Spring Boot saber onde está a Gateway
+    osascript -e "tell app \"Terminal\" to do script \"echo '===== MÁQUINA #2: Web Server ====='; cd '$(pwd)/$WEB_DIR'; ./mvnw spring-boot:run -Dspring-boot.run.jvmArguments='-Dgoogol.gateway.host=$MACHINE1_IP'\""
+else
+    echo "⚠️  AVISO: Pasta '$WEB_DIR' não encontrada."
+fi
 
 echo ""
-echo "=================================================="
-echo "✅ Todos os terminais da Máquina #2 foram abertos!"
-echo "=================================================="
-echo ""
-echo "Componentes iniciados:"
-echo "  ✅ Storage Barrel 1"
-echo "  ✅ Downloader"
-echo "  ✅ Cliente RMI (interativo)"
-echo "  ✅ Spring Boot Web Application"
-echo ""
-echo "O Cliente está em modo interativo no terceiro terminal."
-echo ""
-echo "🌐 A aplicação web estará disponível em: http://localhost:8080"
-echo ""
-echo "Para parar todos os serviços, feche os terminais ou use:"
-echo "  pkill -f 'barrel.Barrel'"
-echo "  pkill -f 'downloader.Downloader'"
-echo "  pkill -f 'client.Client'"
-echo "  pkill -f 'spring-boot:run'"
+echo "✅ Todos os terminais iniciados."
+echo "🌍 Acede ao site (HTTP, não HTTPS!):"
+echo "   👉 http://$MACHINE2_IP:8080"
 echo ""

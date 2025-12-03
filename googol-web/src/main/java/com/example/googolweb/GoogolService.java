@@ -4,6 +4,7 @@ import common.GatewayInterface;
 import common.SearchResult;
 import common.StatisticsCallback;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value; // IMPORTANTE
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,15 +25,23 @@ public class GoogolService {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    private final String RMI_HOST = "localhost";
-    private final int RMI_PORT = 1099;
+    // --- CONFIGURAÇÃO DINÂMICA ---
+    // Lê o valor passado pelo script (-Dgoogol.gateway.host=...)
+    // Se não houver valor, usa "localhost" por defeito (para testes locais)
+    @Value("${googol.gateway.host:localhost}")
+    private String rmiHost;
+
+    @Value("${googol.gateway.port:1099}")
+    private int rmiPort;
+
     private final String GATEWAY_NAME = "GoogolGateway";
 
     @PostConstruct
     public void initConnection() {
         try {
-            System.out.println(">>> [GoogolService] A tentar ligar à Gateway RMI...");
-            Registry registry = LocateRegistry.getRegistry(RMI_HOST, RMI_PORT);
+            System.out.println(">>> [GoogolService] A tentar ligar à Gateway em: " + rmiHost + ":" + rmiPort);
+            
+            Registry registry = LocateRegistry.getRegistry(rmiHost, rmiPort);
             this.gateway = (GatewayInterface) registry.lookup(GATEWAY_NAME);
             
             registerStatsCallback();
@@ -60,8 +69,7 @@ public class GoogolService {
         try {
             return gateway.search(query);
         } catch (RemoteException e) {
-            // Tenta reconectar silenciosamente
-            initConnection(); 
+            initConnection(); // Tenta reconectar
             return Collections.emptyList();
         }
     }
@@ -76,7 +84,6 @@ public class GoogolService {
         }
     }
 
-    // NOVO: Obter Backlinks
     public List<String> getBacklinks(String url) {
         if (gateway == null) return Collections.emptyList();
         try {
