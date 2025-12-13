@@ -1,4 +1,3 @@
-
 # Relatório do Projeto Googol - Sistemas Distribuídos 2025/2026
 
 **Autores:**
@@ -213,6 +212,28 @@ Abra o navegador e aceda ao endereço fornecido pelo script da Máquina 2 (ex: `
 
 ---
 
-## 9. Conclusão
+
+
+## 9. Guia de Utilização (Frontend)
+
+Após aceder ao endereço do servidor Web (ex: `http://<IP>:8080`), o utilizador dispõe de uma interface gráfica para interagir com todo o sistema distribuído:
+
+### 9.1. Página Inicial (Dashboard)
+
+* **Pesquisa:** Barra central para introduzir termos. Ao submeter, o pedido é encaminhado para a Gateway e distribuído pelos Barrels.
+* **Estatísticas em Tempo Real:**
+  * **Gráfico de Tendências:** Visualização dinâmica das pesquisas mais frequentes. O gráfico atualiza-se automaticamente (sem *refresh*) via WebSockets sempre que qualquer utilizador faz uma pesquisa.
+  * **Monitorização de Nós:** Lista lateral que mostra o estado de cada Storage Barrel (Online/Offline) e estatísticas de carga.
+* **Ferramentas de Indexação:** Menu expansível que permite:
+  * **Indexar URL:** Submissão manual de um link específico para a fila de *crawling*.
+  * **HN Index (Hacker News):** Integração REST onde o utilizador insere um tópico (ex: "Java") e o sistema procura e indexa automaticamente as notícias mais relevantes da API do Hacker News.
+
+### 9.2. Página de Resultados
+
+* **Listagem e Paginação:** Os resultados são apresentados 10 a 10, ordenados por relevância (número de ligações recebidas).
+* **Resumo Inteligente (AI):** Funcionalidade exclusiva que permite ao utilizador clicar em "Gerar Resumo". O sistema recolhe os excertos dos 5 melhores resultados e utiliza a API da Groq para gerar um texto sintético explicativo sobre o tema pesquisado.
+* **Análise de Ligações:** Cada resultado possui um botão "Ver Backlinks" que navega para uma página de detalhe listando todas as páginas indexadas que apontam para aquele URL.
+
+## 10. Conclusão
 
 O projeto Googol permitiu implementar um sistema distribuído complexo, abordando desafios como a consistência de dados, tolerância a falhas e integração de sistemas heterogéneos (Java RMI e Web/REST). A solução final cumpre todos os requisitos funcionais, oferecendo uma experiência de utilizador fluida e uma infraestrutura backend resiliente.
