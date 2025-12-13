@@ -64,6 +64,6 @@ fi
 
 echo ""
 echo "✅ Todos os terminais iniciados."
-echo "🌍 Acede ao site (HTTP, não HTTPS!):"
-echo "   👉 http://$MACHINE2_IP:8080"
+echo "🌍 Acede ao site (HTTPS SEGURO):"
+echo "   👉 https://$MACHINE2_IP:8443"
 echo ""
