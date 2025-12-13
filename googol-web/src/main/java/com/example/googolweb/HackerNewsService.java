@@ -8,18 +8,44 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * Serviço responsável pela integração com a API externa do Hacker News.
+ * <p>
+ * Este serviço permite pesquisar e indexar automaticamente as histórias mais populares
+ * ("Top Stories") do Hacker News que correspondam a um critério de pesquisa.
+ * </p>
+ * <p>Utiliza a API REST pública do Hacker News (Firebase) para obter metadados
+ * e extrair URLs relevantes para serem indexados pelo sistema Googol.</p>
+ */
 @Service
 public class HackerNewsService {
 
     private final RestClient restClient;
     private final GoogolService googolService;
 
+    /**
+     * Construtor do serviço com injeção de dependências.
+     * Inicializa o cliente REST para fazer pedidos HTTP.
+     * * @param googolService Serviço principal para enviar os URLs encontrados para a Gateway.
+     */
     public HackerNewsService(GoogolService googolService) {
         this.restClient = RestClient.create();
         this.googolService = googolService;
     }
 
-    // Método principal: Procura e indexa
+    /**
+     * Pesquisa nas histórias de topo do Hacker News e indexa aquelas que contêm o termo especificado.
+     * <p>O processo segue estes passos:</p>
+     * <ol>
+     * <li>Obtém a lista de IDs das 500 "Top Stories".</li>
+     * <li>Itera sobre os primeiros 20 IDs (para performance).</li>
+     * <li>Para cada ID, faz um pedido REST para obter os detalhes da história.</li>
+     * <li>Verifica se o título ou texto contém o termo de pesquisa.</li>
+     * <li>Se corresponder e tiver um URL, envia-o para a Gateway via {@link GoogolService#indexURL(String)}.</li>
+     * </ol>
+     * * @param query O termo de pesquisa para filtrar as histórias.
+     * @return O número de URLs encontrados e submetidos para indexação.
+     */
     public int searchAndIndex(String query) {
         if (query == null || query.isBlank()) return 0;
         String term = query.toLowerCase();
@@ -35,7 +61,7 @@ public class HackerNewsService {
         if (topStoryIds == null) return 0;
 
         int indexedCount = 0;
-        // Limitamos a 20 histórias para não bloquear o servidor muito tempo
+        // Limitamos a 20 histórias para não bloquear o servidor muito tempo com múltiplos pedidos HTTP
         int limit = Math.min(topStoryIds.size(), 20); 
 
         for (int i = 0; i < limit; i++) {
